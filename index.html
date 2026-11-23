@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0d0a08" />
+  <title>Fəridin bərbərxanası — Rezervasiya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --bg: #0c0908;
+      --surface: rgba(24, 19, 16, 0.9);
+      --surface-2: rgba(36, 28, 23, 0.94);
+      --gold: #d4a853;
+      --gold-hi: #f0cf85;
+      --gold-dim: rgba(212, 168, 83, 0.16);
+      --gold-line: rgba(212, 168, 83, 0.34);
+      --cream: #f5efe6;
+      --muted: #a69a8c;
+      --line: rgba(255, 238, 214, 0.11);
+      --green: #4ade80;
+      --green-bg: rgba(34, 197, 94, 0.14);
+      --red: #f87171;
+      --red-bg: rgba(239, 68, 68, 0.14);
+      --amber: #fbbf24;
+      --amber-bg: rgba(245, 158, 11, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cream);
+      display: flex;
+      justify-content: center;
+      background-color: #090706;
+      background-image:
+        linear-gradient(180deg, rgba(9, 7, 6, 0.72), rgba(9, 7, 6, 0.92)),
+        url("https://images.unsplash.com/photo-1512690459411-b9245aed614b?auto=format&fit=crop&w=1400&q=80");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 470px;
+      min-height: 100vh;
+      background: linear-gradient(180deg, rgba(14, 11, 9, 0.84), rgba(11, 8, 7, 0.97));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+      border-left: 1px solid rgba(212, 168, 83, 0.15);
+      border-right: 1px solid rgba(212, 168, 83, 0.15);
+      position: relative;
+    }
+
+    .barber-pole-bar {
+      height: 4px;
+      width: 100%;
+      background: repeating-linear-gradient(
+        -55deg,
+        #b91c1c,
+        #b91c1c 10px,
+        #f5efe6 10px,
+        #f5efe6 20px,
+        #1e3a8a 20px,
+        #1e3a8a 30px,
+        #f5efe6 30px,
+        #f5efe6 40px
+      );
+      background-size: 56px 56px;
+      animation: poleScroll 3s linear infinite;
+    }
+    @keyframes poleScroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 56px 0; }
+    }
+
+    .hero-card {
+      position: relative;
+      height: 176px;
+      overflow: hidden;
+      background-color: #16110e;
+      background-image:
+        linear-gradient(180deg, rgba(12, 9, 8, 0.3) 0%, rgba(12, 9, 8, 0.68) 55%, rgba(12, 9, 8, 0.98) 100%),
+        url("https://images.unsplash.com/photo-1520338661084-680395057c93?auto=format&fit=crop&w=1200&q=80");
+      background-size: cover;
+      background-position: center 28%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 16px 14px;
+      border-bottom: 1px solid var(--gold-line);
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: rgba(12, 9, 8, 0.68);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--cream);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .dot.offline { background: var(--amber); }
+
+    .admin-btn {
+      background: rgba(12, 9, 8, 0.72);
+      backdrop-filter: blur(8px);
+      color: var(--gold-hi);
+      border: 1px solid var(--gold-line);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+    }
+    .admin-btn.active {
+      background: var(--gold);
+      color: #0c0908;
+      border-color: var(--gold);
+    }
+
+    .hero-bottom {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .brand-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: var(--gold-hi);
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #d6cbbd;
+      margin-top: 4px;
+    }
+
+    .mini-pole {
+      width: 14px;
+      height: 46px;
+      border-radius: 8px;
+      border: 1.5px solid var(--gold);
+      background: repeating-linear-gradient(
+        -45deg,
+        #dc2626,
+        #dc2626 6px,
+        #f5efe6 6px,
+        #f5efe6 12px,
+        #2563eb 12px,
+        #2563eb 18px,
+        #f5efe6 18px,
+        #f5efe6 24px
+      );
+      background-size: 34px 34px;
+      animation: poleScroll 2.2s linear infinite;
+      box-shadow: 0 0 15px rgba(212, 168, 83, 0.3);
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+      padding: 16px 14px 44px;
+    }
+
+    .barber-note-banner {
+      background: linear-gradient(135deg, rgba(212, 168, 83, 0.18), rgba(146, 64, 14, 0.22));
+      border: 1px solid rgba(212, 168, 83, 0.45);
+      border-left: 4px solid var(--gold);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+    .barber-note-lbl {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--gold-hi);
+      margin-bottom: 4px;
+    }
+    .barber-note-text {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #fef3c7;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
+    .ticket-card {
+      position: relative;
+      background: linear-gradient(145deg, #211a15, #14100d);
+      border: 1px solid var(--gold);
+      border-radius: 18px;
+      padding: 18px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(240, 207, 133, 0.2);
+      overflow: hidden;
+    }
+    .ticket-card::before, .ticket-card::after {
+      content: "";
+      position: absolute;
+      top: 52%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0c0908;
+      border: 1px solid var(--gold);
+    }
+    .ticket-card::before { left: -10px; }
+    .ticket-card::after { right: -10px; }
+
+    .ticket-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .ticket-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--gold-hi);
+    }
+    .ticket-badge {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .countdown-box {
+      background: radial-gradient(circle at center, rgba(212, 168, 83, 0.16), rgba(212, 168, 83, 0.05));
+      border: 1px dashed var(--gold-line);
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .countdown-lbl {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .countdown-val {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 5px;
+    }
+
+    .ticket-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(212, 168, 83, 0.28);
+    }
+    .ticket-cell span {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+    }
+    .ticket-cell b {
+      display: block;
+      font-size: 13.5px;
+      color: var(--cream);
+      margin-top: 2px;
+    }
+    .ticket-note {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      color: #e2d9cd;
+    }
+
+    .glass-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 15px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+    .step-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--gold-hi);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      color: var(--gold-hi);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-meta {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .days-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .days-row::-webkit-scrollbar { display: none; }
+
+    .day-pill {
+      min-width: 76px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: 0.18s ease;
+    }
+    .day-pill.active {
+      background: linear-gradient(145deg, #e2be70, #b88933);
+      border-color: var(--gold-hi);
+      color: #0c0908;
+      box-shadow: 0 6px 18px rgba(212, 168, 83, 0.28);
+      transform: translateY(-1px);
+    }
+    .day-pill.closed-day {
+      border-color: rgba(248, 113, 113, 0.35);
+      opacity: 0.65;
+    }
+    .day-pill .d-top { font-size: 10.5px; font-weight: 700; opacity: 0.82; }
+    .day-pill .d-num { font-size: 14px; font-weight: 800; margin-top: 3px; }
+
+    .period-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.4px;
+      margin: 12px 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .period-label:first-of-type { margin-top: 2px; }
+
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+    }
+    .slot-btn {
+      padding: 10px 4px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--cream);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .slot-btn:hover:not(:disabled) { border-color: var(--gold-line); }
+    .slot-btn.active {
+      background: linear-gradient(135deg, #e5c273, #bf9039);
+      color: #0c0908;
+      border-color: var(--gold-hi);
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(212, 168, 83, 0.35);
+    }
+    .slot-btn.busy {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.22);
+      color: #6b5e55;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
+    .slot-btn.passed {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.04);
+      color: #4b423b;
+      cursor: not-allowed;
+    }
+
+    .closed-day-box {
+      background: var(--red-bg);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .field { margin-bottom: 11px; }
+    .field label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(12, 9, 8, 0.7);
+      color: var(--cream);
+      font-size: 14px;
+      outline: none;
+      transition: 0.15s;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .service-btn {
+      background: rgba(12, 9, 8, 0.62);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 6px;
+      color: var(--cream);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      font-weight: 700;
+      transition: 0.15s;
+    }
+    .service-btn .ico { font-size: 19px; }
+    .service-btn.active {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+      color: var(--gold-hi);
+      box-shadow: 0 0 18px rgba(212, 168, 83, 0.18);
+    }
+
+    .chosen-summary {
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold-hi);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+      transition: 0.15s;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #e4bf6f, #b98932);
+      color: #0c0908;
+      box-shadow: 0 6px 20px rgba(212, 168, 83, 0.25);
+    }
+    .btn-dark { background: var(--surface-2); color: var(--cream); border: 1px solid var(--line); }
+    .btn-red { background: var(--red-bg); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.35); }
+    .btn-green { background: var(--green-bg); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.35); }
+    .btn-sm { padding: 7px 11px; font-size: 12px; width: auto; border-radius: 9px; }
+
+    /* Admin Panel */
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .stat-box b { font-size: 19px; display: block; }
+    .stat-box span { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+
+    .schedule-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .schedule-preview {
+      font-size: 11.5px;
+      color: var(--gold-hi);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      border-radius: 9px;
+      padding: 7px 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .admin-slot-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(12, 9, 8, 0.52);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .admin-slot-row.booked {
+      border-color: rgba(74, 222, 128, 0.4);
+      background: rgba(34, 197, 94, 0.07);
+    }
+    .admin-slot-row.blocked {
+      border-color: rgba(248, 113, 113, 0.35);
+      background: rgba(239, 68, 68, 0.06);
+    }
+    .slot-time-tag {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--gold-hi);
+      min-width: 50px;
+    }
+    .slot-mid { flex: 1; min-width: 0; }
+    .slot-mid b { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-mid small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .client-note-tag {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #fde68a;
+      background: rgba(212, 168, 83, 0.12);
+      border-left: 2px solid var(--gold);
+      padding: 3px 7px;
+      border-radius: 4px;
+      word-break: break-word;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 5, 4, 0.84);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: #1a1410;
+      border: 1px solid var(--gold-line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--gold-hi);
+    }
+    .close-x {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--cream);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .err-msg {
+      color: #fecaca;
+      background: var(--red-bg);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      padding: 9px 11px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #e5c273, #b98932);
+      color: #0c0908;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 800;
+      z-index: 300;
+      display: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- Admin Giriş Modalı -->
+<div class="modal-backdrop" id="adminLoginModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🔐 Bərbər Admin</div>
+      <button class="close-x" onclick="closeAdminLogin()">✕</button>
+    </div>
+    <div class="err-msg" id="adminPinErr">❌ Şifrə səhvdir!</div>
+    <div class="field">
+      <label>Şifrə</label>
+      <input type="password" id="adminPassInput" placeholder="Şifrəni yazın..." onkeydown="if(event.key==='Enter') verifyAdminPass()" />
+    </div>
+    <button class="btn btn-gold" onclick="verifyAdminPass()">Daxil ol</button>
+  </div>
+</div>
+
+<!-- Admin Əllə Rezerv Modalı -->
+<div class="modal-backdrop" id="manualBookModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="manualModalTitle">➕ Əllə Rezerv</div>
+      <button class="close-x" onclick="closeManualModal()">✕</button>
+    </div>
+    <div class="err-msg" id="manualErr"></div>
+    <div class="field">
+      <label>Müştərinin Adı *</label>
+      <input type="text" id="mName" placeholder="Məs: Murad" />
+    </div>
+    <div class="field">
+      <label>Telefon nömrəsi</label>
+      <input type="tel" id="mPhone" placeholder="050 123 45 67" />
+    </div>
+    <div class="field">
+      <label>Xidmət</label>
+      <select id="mService">
+        <option value="Saç">✂️ Saç</option>
+        <option value="Saqqal">🧔 Saqqal</option>
+        <option value="Saç + Saqqal">💈 Saç + Saqqal</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Qeyd (ixtiyari)</label>
+      <input type="text" id="mNote" placeholder="Qeyd..." />
+    </div>
+    <button class="btn btn-gold" onclick="saveManualBooking()">Yadda saxla</button>
+  </div>
+</div>
+
+<div class="app-shell">
+  <div class="barber-pole-bar"></div>
+
+  <header class="hero-card">
+    <div class="hero-top">
+      <span class="live-pill" id="liveBadge"><span class="dot offline"></span> Qoşulur</span>
+      <button class="admin-btn" id="adminToggleBtn" onclick="handleAdminBtn()">🔐 Admin</button>
+    </div>
+    <div class="hero-bottom">
+      <div>
+        <div class="brand-title" id="shopTitleDisplay">Fəridin bərbərxanası</div>
+        <div class="brand-sub">Gentlemen's Barber Studio</div>
+      </div>
+      <div class="mini-pole" title="Barbershop"></div>
+    </div>
+  </header>
+
+  <main class="content" id="mainContent"></main>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDq5MQ9Wp7Sa4bqaxAMtFUoysJscP7aqk0",
+    authDomain: "elpiano.firebaseapp.com",
+    databaseURL: "https://elpiano-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "elpiano",
+    storageBucket: "elpiano.firebasestorage.app",
+    messagingSenderId: "1030026889070",
+    appId: "1:1030026889070:web:90fa14cbfde6ef1f75e37f"
+  };
+
+  const ROOT_PATH = "barber_tebriz_app";
+  const DEFAULT_HASH = "827221746:811344025";
+
+  let db = null;
+  try {
+    if (typeof firebase !== "undefined") {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    }
+  } catch (e) {}
+
+  const MONTHS_AZ = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
+  const DAYS_SHORT_AZ = ["Baz","B.e","Ç.a","Çər","C.a","Cüm","Şən"];
+
+  // Bütün saat seçimləri (Admin iş saatı seçimi üçün)
+  const START_TIME_CHOICES = [
+    "09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30",
+    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","17:00","18:00"
+  ];
+  const END_TIME_CHOICES = [
+    "15:00","16:00","17:00","18:00","18:30","19:00","19:30","20:00","20:30",
+    "21:00","21:30","22:00","22:30","23:00","23:30","00:00","01:00","02:00","03:00","04:00"
+  ];
+
+  let cloudConfig = {
+    shopName: "Fəridin bərbərxanası",
+    note: "",
+    closedDays: {},
+    defaultSchedule: { start: "13:00", end: "04:00", step: 30 },
+    daySchedules: {},
+    adminHash: ""
+  };
+  let cloudBookings = {};
+  let isAdminMode = sessionStorage.getItem("barber_admin_ok") === "1";
+
+  let selectedDate = "";
+  let selectedSlot = "";
+  let selectedService = "";
+  let adminSelectedDate = "";
+  let manualTargetSlot = "";
+  let countdownInterval = null;
+
+  function computeHash(str) {
+    let h1 = 7, h2 = 13;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      h1 = (h1 * 31 + c) % 1000000007;
+      h2 = (h2 * 17 + c) % 999999937;
+    }
+    return h1 + ":" + h2;
+  }
+
+  function getClientToken() {
+    let tok = localStorage.getItem("barber_client_token");
+    if (!tok) {
+      tok = "ct_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem("barber_client_token", tok); } catch {}
+    }
+    return tok;
+  }
+  const MY_CLIENT_TOKEN = getClientToken();
+
+  function escHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { t.style.display = "none"; }, 2400);
+  }
+
+  function toISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function toMins(hhmm) {
+    const [h, m] = String(hhmm || "13:00").split(":").map(Number);
+    return (h * 60) + (m || 0);
+  }
+
+  function getScheduleForDate(dateISO) {
+    const def = cloudConfig.defaultSchedule || { start: "13:00", end: "04:00", step: 30 };
+    const custom = (cloudConfig.daySchedules || {})[dateISO];
+    if (custom && custom.start && custom.end) {
+      return { start: custom.start, end: custom.end, step: Number(custom.step) || Number(def.step) || 30, isCustom: true };
+    }
+    return { start: def.start || "13:00", end: def.end || "04:00", step: Number(def.step) || 30, isCustom: false };
+  }
+
+  function generateSlots(startStr, endStr, stepMins) {
+    const sMin = toMins(startStr);
+    let eMin = toMins(endStr);
+    if (eMin <= sMin) eMin += 1440; // Gecəyarısını keçirsə (məs. 04:00)
+    const step = Math.max(15, Number(stepMins) || 30);
+    const list = [];
+    for (let m = sMin; m + step <= eMin; m += step) {
+      const hh = Math.floor(m / 60) % 24;
+      const mm = m % 60;
+      const label = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+      list.push({ label, isNight: m >= 1440 });
+    }
+    return list;
+  }
+
+  function getActiveWorkDateISO() {
+    const now = new Date();
+    if (now.getHours() < 5) {
+      const yest = new Date(now);
+      yest.setDate(yest.getDate() - 1);
+      const yISO = toISO(yest);
+      const ySch = getScheduleForDate(yISO);
+      const sMin = toMins(ySch.start);
+      let eMin = toMins(ySch.end);
+      if (eMin <= sMin) {
+        // Dünənki iş günü gecəyarısını keçib
+        const nowMin = (now.getHours() * 60) + now.getMinutes();
+        if (nowMin < (eMin)) return yISO;
+      }
+    }
+    return toISO(now);
+  }
+
+  selectedDate = getActiveWorkDateISO();
+  adminSelectedDate = getActiveWorkDateISO();
+
+  function getUpcomingWorkDates(count = 14) {
+    const baseISO = getActiveWorkDateISO();
+    const [y, m, d] = baseISO.split("-").map(Number);
+    const list = [];
+    for (let i = 0; i < count; i++) list.push(toISO(new Date(y, m - 1, d + i)));
+    return list;
+  }
+
+  function formatDateAz(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return `${d} ${MONTHS_AZ[m - 1]} (${DAYS_SHORT_AZ[dt.getDay()]})`;
+  }
+
+  function slotToKey(slot) { return slot.replace(":", "_"); }
+
+  function getSlotRealDate(workDateISO, slot, startStr) {
+    const [y, m, d] = workDateISO.split("-").map(Number);
+    const [hh, mm] = slot.split(":").map(Number);
+    const dt = new Date(y, m - 1, d, hh, mm, 0, 0);
+    const schStart = startStr || getScheduleForDate(workDateISO).start;
+    if (toMins(slot) < toMins(schStart)) dt.setDate(dt.getDate() + 1);
+    return dt;
+  }
+
+  function isSlotPassed(workDateISO, slot, startStr) {
+    return getSlotRealDate(workDateISO, slot, startStr).getTime() <= Date.now();
+  }
+
+  function formatCountdownText(targetMs) {
+    const diff = targetMs - Date.now();
+    if (diff <= 0) return "Vaxt çatıb!";
+    const totalSec = Math.floor(diff / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} gün`);
+    if (hours > 0 || days > 0) parts.push(`${hours} saat`);
+    parts.push(`${mins} dəqiqə`);
+    if (days === 0 && hours === 0) parts.push(`${secs} saniyə`);
+    return parts.join(" ") + " sonra orada olmalısınız";
+  }
+
+  // Müştərinin YALNIZ öz yazdığı rezervasiyalar
+  function getMyBookingsLocal() {
+    try {
+      const raw = localStorage.getItem("barber_my_bookings_v2");
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(b => b && b.workDate && b.slot && (getSlotRealDate(b.workDate, b.slot).getTime() + 1800000 >= Date.now()));
+    } catch { return []; }
+  }
+  function saveMyBookingsLocal(arr) {
+    try { localStorage.setItem("barber_my_bookings_v2", JSON.stringify(arr)); } catch {}
+  }
+  function addMyBookingLocal(b) {
+    const list = getMyBookingsLocal().filter(x => !(x.workDate === b.workDate && x.slot === b.slot));
+    list.push(b);
+    saveMyBookingsLocal(list);
+  }
+  function removeMyBookingLocal(workDate, slot) {
+    const list = getMyBookingsLocal().filter(x => !(x.workDate === workDate && x.slot === slot));
+    saveMyBookingsLocal(list);
+  }
+
+  function startFirebase() {
+    if (!db) {
+      document.getElementById("liveBadge").innerHTML = '<span class="dot offline"></span> Lokal';
+      render();
+      return;
+    }
+    db.ref(".info/connected").on("value", s => {
+      document.getElementById("liveBadge").innerHTML = s.val() === true
+        ? '<span class="dot online"></span> Canlı'
+        : '<span class="dot offline"></span> Qoşulur';
+    });
+    db.ref(`${ROOT_PATH}/config`).on("value", snap => {
+      const val = snap.val() || {};
+      cloudConfig = {
+        shopName: val.shopName || "Fəridin bərbərxanası",
+        note: val.note || "",
+        closedDays: val.closedDays || {},
+        defaultSchedule: val.defaultSchedule || { start: "13:00", end: "04:00", step: 30 },
+        daySchedules: val.daySchedules || {},
+        adminHash: val.adminHash || ""
+      };
+      document.getElementById("shopTitleDisplay").textContent = cloudConfig.shopName;
+      document.title = `${cloudConfig.shopName} — Rezervasiya`;
+      render();
+    });
+    db.ref(`${ROOT_PATH}/bookings`).on("value", snap => {
+      cloudBookings = snap.val() || {};
+      render();
+    });
+  }
+
+  function render() {
+    const adminBtn = document.getElementById("adminToggleBtn");
+    adminBtn.textContent = isAdminMode ? "← Müştəri" : "🔐 Admin";
+    adminBtn.className = "admin-btn" + (isAdminMode ? " active" : "");
+
+    if (isAdminMode) {
+      stopCountdownTimer();
+      renderAdminView();
+    } else {
+      renderClientView();
+    }
+  }
+
+  // ================= MÜŞTƏRİ EKRANI =================
+  function renderClientView() {
+    const main = document.getElementById("mainContent");
+    const savedName = document.getElementById("cName")?.value || "";
+    const savedPhone = document.getElementById("cPhone")?.value || "";
+    const savedNote = document.getElementById("cNote")?.value || "";
+    let html = "";
+
+    // Bərbərin Qeydi
+    if (cloudConfig.note && cloudConfig.note.trim() !== "") {
+      html += `
+        <div class="barber-note-banner">
+          <div class="barber-note-lbl">📌 Bərbərin Qeydi</div>
+          <div class="barber-note-text">${escHtml(cloudConfig.note)}</div>
+        </div>
+      `;
+    }
+
+    // Yalnız bu müştərinin özünün etdiyi aktiv rezervasiyalar
+    const myBookings = getMyBookingsLocal();
+    const activeReceipts = [];
+    myBookings.forEach(myB => {
+      const cloudEntry = (cloudBookings[myB.workDate] || {})[slotToKey(myB.slot)];
+      if (Object.keys(cloudBookings).length > 0) {
+        if (cloudEntry && cloudEntry.id === myB.id && cloudEntry.clientToken === MY_CLIENT_TOKEN) {
+          activeReceipts.push(myB);
+        } else if (!cloudEntry) {
+          removeMyBookingLocal(myB.workDate, myB.slot);
+        }
+      } else {
+        activeReceipts.push(myB);
+      }
+    });
+
+    activeReceipts.forEach((rec, idx) => {
+      const realDt = getSlotRealDate(rec.workDate, rec.slot, rec.schStart);
+      html += `
+        <div class="ticket-card">
+          <div class="ticket-head">
+            <span class="ticket-title">✂️ REZERVASİYA BİLETİ</span>
+            <span class="ticket-badge">✅ Təsdiqləndi</span>
+          </div>
+          <div class="countdown-box">
+            <div class="countdown-lbl">⏳ Qalan vaxt</div>
+            <div class="countdown-val" data-target-ms="${realDt.getTime()}" id="cd_${idx}">${formatCountdownText(realDt.getTime())}</div>
+          </div>
+          <div class="ticket-grid">
+            <div class="ticket-cell"><span>Müştəri</span><b>${escHtml(rec.name)}</b></div>
+            <div class="ticket-cell"><span>Xidmət</span><b>${escHtml(rec.service)}</b></div>
+            <div class="ticket-cell"><span>Tarix</span><b>${formatDateAz(rec.workDate)}</b></div>
+            <div class="ticket-cell"><span>Saat</span><b>${escHtml(rec.slot)}</b></div>
+          </div>
+          ${rec.note ? `<div class="ticket-note">📝 <b>Qeydiniz:</b> ${escHtml(rec.note)}</div>` : ""}
+          <button class="btn btn-red btn-sm" style="width:100%; margin-top:12px;" onclick="cancelMyOwnBooking('${rec.workDate}','${rec.slot}','${rec.id}')">🗑️ Rezervasiyanı ləğv et</button>
+        </div>
+      `;
+    });
+
+    const days = getUpcomingWorkDates(14);
+    if (!days.includes(selectedDate)) selectedDate = days[0];
+    const dayBookings = cloudBookings[selectedDate] || {};
+    const isDayClosed = Boolean((cloudConfig.closedDays || {})[selectedDate]);
+    const sch = getScheduleForDate(selectedDate);
+    const slotObjs = generateSlots(sch.start, sch.end, sch.step);
+    const daySlotObjs = slotObjs.filter(s => !s.isNight);
+    const nightSlotObjs = slotObjs.filter(s => s.isNight);
+
+    const services = [
+      { name: "Saç", ico: "✂️" },
+      { name: "Saqqal", ico: "🧔" },
+      { name: "Saç + Saqqal", ico: "💈" }
+    ];
+
+    html += `
+      <!-- 1. GÜN SEÇİMİ -->
+      <div class="glass-card">
+        <div class="step-header">
+          <div class="step-title"><span class="step-num">1</span> Günü seçin</div>
+          <span class="step-meta">${formatDateAz(selectedDate)}</span>
+        </div>
+        <div class="days-row">
+          ${days.map((iso, idx) => {
+            const [y, m, d] = iso.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            const top = idx === 0 ? "Bu gün" : (idx === 1 ? "Sabah" : DAYS_SHORT_AZ[dt.getDay()]);
+            const closed = Boolean((cloudConfig.closedDays || {})[iso]);
+            return `
+              <div class="day-pill ${selectedDate === iso ? "active" : ""} ${closed ? "closed-day" : ""}" onclick="selectClientDate('${iso}')">
+                <div class="d-top">${top}${closed ? " 🔒" : ""}</div>
+                <div class="d-num">${d} ${MONTHS_AZ[m - 1].slice(0, 3)}</div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+
+      <!-- 2. SAAT SEÇİMİ -->
+      <div class="glass-card">
+        <div class="step-header">
+          <div class="step-title"><span class="step-num">2</span> Saatı seçin</div>
+        </div>
+        ${isDayClosed || slotObjs.length === 0 ? `
+          <div class="closed-day-box">
+            🔒 Bu tarixdə bərbər işdə deyil. Zəhmət olmasa başqa gün seçin.
+          </div>
+        ` : `
+          ${daySlotObjs.length ? `
+            <div class="period-label">☀️ Günorta / Axşam</div>
+            <div class="slots-grid">
+              ${daySlotObjs.map(s => renderClientSlotBtn(s.label, dayBookings, sch.start)).join("")}
+            </div>
+          ` : ""}
+          ${nightSlotObjs.length ? `
+            <div class="period-label" style="margin-top:14px;">🌙 Gecə</div>
+            <div class="slots-grid">
+              ${nightSlotObjs.map(s => renderClientSlotBtn(s.label, dayBookings, sch.start)).join("")}
+            </div>
+          ` : ""}
+        `}
+      </div>
+
+      <!-- 3. AD, NÖMRƏ, QEYD VƏ XİDMƏT SEÇİMİ -->
+      <div class="glass-card" id="clientFormCard">
+        <div class="step-header">
+          <div class="step-title"><span class="step-num">3</span> Məlumatlarınız</div>
+        </div>
+
+        ${selectedSlot ? `
+          <div class="chosen-summary">
+            <span>📅 ${formatDateAz(selectedDate)}</span>
+            <span>🕒 Saat: ${selectedSlot}</span>
+          </div>
+        ` : ""}
+
+        <div class="err-msg" id="clientFormErr"></div>
+
+        <div class="field">
+          <label>Adınız *</label>
+          <input type="text" id="cName" placeholder="Adınızı yazın..." value="${escHtml(savedName)}" />
+        </div>
+        <div class="field">
+          <label>Mobil nömrəniz *</label>
+          <input type="tel" id="cPhone" placeholder="050 123 45 67" value="${escHtml(savedPhone)}" />
+        </div>
+        <div class="field">
+          <label>Əlavə qeyd (ixtiyari)</label>
+          <input type="text" id="cNote" placeholder="Məs: Uşaq kəsimidir, saç yuyulacaq..." value="${escHtml(savedNote)}" />
+        </div>
+
+        <div class="field" style="margin-bottom:5px;">
+          <label>Xidməti seçin *</label>
+        </div>
+        <div class="service-grid">
+          ${services.map(s => `
+            <button type="button" class="service-btn ${selectedService === s.name ? "active" : ""}" onclick="selectService('${s.name}')">
+              <span class="ico">${s.ico}</span>
+              <span>${s.name}</span>
+            </button>
+          `).join("")}
+        </div>
+
+        <button class="btn btn-gold" onclick="submitClientBooking()">✅ Təsdiqlə</button>
+      </div>
+    `;
+
+    main.innerHTML = html;
+
+    if (activeReceipts.length > 0) startCountdownTimer();
+    else stopCountdownTimer();
+  }
+
+  function renderClientSlotBtn(slot, dayBookings, schStart) {
+    const entry = dayBookings[slotToKey(slot)];
+    if (isSlotPassed(selectedDate, slot, schStart)) return `<button class="slot-btn passed" disabled>${slot}</button>`;
+    if (entry) return `<button class="slot-btn busy" disabled>${slot}</button>`;
+    return `<button class="slot-btn ${selectedSlot === slot ? "active" : ""}" onclick="selectClientSlot('${slot}')">${slot}</button>`;
+  }
+
+  function startCountdownTimer() {
+    stopCountdownTimer();
+    countdownInterval = setInterval(() => {
+      document.querySelectorAll("[data-target-ms]").forEach(el => {
+        el.textContent = formatCountdownText(Number(el.getAttribute("data-target-ms")));
+      });
+    }, 1000);
+  }
+  function stopCountdownTimer() {
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  }
+
+  function selectClientDate(iso) { selectedDate = iso; selectedSlot = ""; renderClientView(); }
+  function selectClientSlot(sl) {
+    selectedSlot = sl;
+    renderClientView();
+    const form = document.getElementById("clientFormCard");
+    if (form) form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function selectService(s) {
+    selectedService = s;
+    renderClientView();
+  }
+
+  function submitClientBooking() {
+    const err = document.getElementById("clientFormErr");
+    const name = (document.getElementById("cName").value || "").trim();
+    const phone = (document.getElementById("cPhone").value || "").trim();
+    const note = (document.getElementById("cNote").value || "").trim();
+    const sch = getScheduleForDate(selectedDate);
+
+    if ((cloudConfig.closedDays || {})[selectedDate]) {
+      err.textContent = "⚠️ Bu gün bağlıdır, başqa gün seçin."; err.style.display = "block"; return;
+    }
+    if (!selectedSlot) {
+      err.textContent = "⚠️ Əvvəlcə yuxarıdan saat seçin."; err.style.display = "block"; return;
+    }
+    if (isSlotPassed(selectedDate, selectedSlot, sch.start)) {
+      err.textContent = "⚠️ Seçdiyiniz saat artıq keçib."; err.style.display = "block"; selectedSlot = ""; renderClientView(); return;
+    }
+    if (!name) {
+      err.textContent = "⚠️ Adınızı yazın."; err.style.display = "block"; return;
+    }
+    if (phone.replace(/\D/g, "").length < 7) {
+      err.textContent = "⚠️ Düzgün mobil nömrə yazın."; err.style.display = "block"; return;
+    }
+    if (!selectedService) {
+      err.textContent = "⚠️ Zəhmət olmasa xidməti seçin (Saç, Saqqal və ya Saç + Saqqal)."; err.style.display = "block"; return;
+    }
+    err.style.display = "none";
+
+    const id = "b_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const record = {
+      id,
+      clientToken: MY_CLIENT_TOKEN,
+      name,
+      phone,
+      note,
+      service: selectedService,
+      slot: selectedSlot,
+      workDate: selectedDate,
+      schStart: sch.start,
+      createdAt: Date.now()
+    };
+
+    const key = slotToKey(selectedSlot);
+    if (db) {
+      const ref = db.ref(`${ROOT_PATH}/bookings/${selectedDate}/${key}`);
+      ref.transaction(current => {
+        if (current !== null) return;
+        return record;
+      }, (error, committed) => {
+        if (error) { showToast("❌ Xəta baş verdi"); return; }
+        if (!committed) {
+          err.textContent = "⚠️ Bu saat indicə tutuldu. Başqa saat seçin.";
+          err.style.display = "block";
+          selectedSlot = "";
+          return;
+        }
+        addMyBookingLocal(record);
+        selectedSlot = "";
+        selectedService = "";
+        document.getElementById("cNote").value = "";
+        showToast("✅ Rezervasiyanız təsdiqləndi!");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        renderClientView();
+      });
+    } else {
+      cloudBookings[selectedDate] = cloudBookings[selectedDate] || {};
+      cloudBookings[selectedDate][key] = record;
+      addMyBookingLocal(record);
+      selectedSlot = "";
+      selectedService = "";
+      showToast("✅ Rezervasiyanız təsdiqləndi!");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderClientView();
+    }
+  }
+
+  // Yalnız özü (clientToken uyğun gələndə) ləğv edə bilər
+  function cancelMyOwnBooking(workDate, slot, bookingId) {
+    const key = slotToKey(slot);
+    if (db) {
+      db.ref(`${ROOT_PATH}/bookings/${workDate}/${key}`).once("value", s => {
+        const val = s.val();
+        if (val && val.id === bookingId && val.clientToken === MY_CLIENT_TOKEN) {
+          db.ref(`${ROOT_PATH}/bookings/${workDate}/${key}`).remove();
+          removeMyBookingLocal(workDate, slot);
+          showToast("Rezervasiyanız ləğv edildi");
+          renderClientView();
+        } else if (!val) {
+          removeMyBookingLocal(workDate, slot);
+          renderClientView();
+        } else {
+          showToast("❌ Bu rezervasiyanı ləğv etmək icazəniz yoxdur");
+        }
+      });
+    } else {
+      const val = (cloudBookings[workDate] || {})[key];
+      if (val && val.id === bookingId && val.clientToken === MY_CLIENT_TOKEN) {
+        delete cloudBookings[workDate][key];
+        removeMyBookingLocal(workDate, slot);
+        showToast("Rezervasiyanız ləğv edildi");
+        renderClientView();
+      }
+    }
+  }
+
+  // ================= ADMIN PANEL =================
+  function handleAdminBtn() {
+    if (isAdminMode) { isAdminMode = false; render(); return; }
+    if (sessionStorage.getItem("barber_admin_ok") === "1") { isAdminMode = true; render(); return; }
+    document.getElementById("adminPinErr").style.display = "none";
+    const inp = document.getElementById("adminPassInput");
+    inp.value = "";
+    document.getElementById("adminLoginModal").classList.add("open");
+    setTimeout(() => inp.focus(), 60);
+  }
+  function closeAdminLogin() { document.getElementById("adminLoginModal").classList.remove("open"); }
+  function verifyAdminPass() {
+    const val = document.getElementById("adminPassInput").value.trim();
+    const targetHash = cloudConfig.adminHash || DEFAULT_HASH;
+    if (computeHash(val) === targetHash) {
+      sessionStorage.setItem("barber_admin_ok", "1");
+      isAdminMode = true;
+      closeAdminLogin();
+      showToast("🔓 Admin panel açıldı");
+      render();
+    } else {
+      document.getElementById("adminPinErr").style.display = "block";
+    }
+  }
+  function adminLogout() {
+    sessionStorage.removeItem("barber_admin_ok");
+    isAdminMode = false;
+    showToast("Çıxış edildi");
+    render();
+  }
+
+  function renderAdminView() {
+    const main = document.getElementById("mainContent");
+    const dayBookings = cloudBookings[adminSelectedDate] || {};
+    const isClosed = Boolean((cloudConfig.closedDays || {})[adminSelectedDate]);
+    const sch = getScheduleForDate(adminSelectedDate);
+    const activeSlots = generateSlots(sch.start, sch.end, sch.step).map(s => s.label);
+    const activeSet = new Set(activeSlots);
+
+    // İş saatından kənarda qalan mövcud rezervlər (əgər bərbər saatı sonradan qısaldıbsa itməsin)
+    const extraBookedKeys = Object.keys(dayBookings).filter(k => {
+      const sl = k.replace("_", ":");
+      const b = dayBookings[k];
+      return !activeSet.has(sl) && b && b.name;
+    });
+
+    let bookedCount = 0, blockedCount = 0, freeCount = 0;
+    activeSlots.forEach(sl => {
+      const b = dayBookings[slotToKey(sl)];
+      if (!b) freeCount++;
+      else if (b.blocked) blockedCount++;
+      else bookedCount++;
+    });
+
+    const firstSl = activeSlots[0] || "-";
+    const lastSl = activeSlots[activeSlots.length - 1] || "-";
+
+    main.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <b style="font-family:'Noto Serif',serif; font-size:15px; color:var(--gold-hi);">💈 Fəridin Admin Paneli</b>
+        <button class="btn btn-red btn-sm" onclick="adminLogout()">🚪 Çıxış</button>
+      </div>
+
+      <!-- Bərbərin Qeydi -->
+      <div class="glass-card">
+        <div class="step-header"><div class="step-title">📌 Müştərilər üçün Qeyd</div></div>
+        <div class="field" style="margin-bottom:8px;">
+          <textarea id="adminNoteInput" rows="2" placeholder="Məs: Bazar ertəsi işdə deyiləm...">${escHtml(cloudConfig.note || "")}</textarea>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveBarberNote()">💾 Qeydi Paylaş</button>
+          <button class="btn btn-dark btn-sm" onclick="clearBarberNote()">🗑️ Təmizlə</button>
+        </div>
+      </div>
+
+      <!-- Tarix seçimi və Günü Bağla -->
+      <div class="glass-card">
+        <div class="step-header"><div class="step-title">📅 ${formatDateAz(adminSelectedDate)}</div></div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+          <button class="btn btn-dark btn-sm" onclick="changeAdminDay(-1)">‹</button>
+          <input type="date" value="${adminSelectedDate}" onchange="adminSelectedDate=this.value; renderAdminView()" style="flex:1; padding:8px; border-radius:10px; border:1px solid var(--line); background:rgba(12,9,8,0.65); color:#fff; font-weight:700; text-align:center; color-scheme:dark;" />
+          <button class="btn btn-dark btn-sm" onclick="changeAdminDay(1)">›</button>
+          <button class="btn btn-dark btn-sm" onclick="adminSelectedDate=getActiveWorkDateISO(); renderAdminView()">Bu gün</button>
+        </div>
+        <button class="btn ${isClosed ? "btn-green" : "btn-red"} btn-sm" style="width:100%;" onclick="toggleCloseDay('${adminSelectedDate}')">
+          ${isClosed ? "🔓 Bu gün bağlıdır — Yenidən Aç" : "🔒 Bu günü tam bağla (İşdə deyiləm)"}
+        </button>
+      </div>
+
+      <!-- İş Saatları & Aralıq Tənzimləməsi -->
+      <div class="glass-card">
+        <div class="step-header">
+          <div class="step-title">⏰ İş Saatları & Aralıq</div>
+          <span class="step-meta" style="color:${sch.isCustom ? 'var(--gold-hi)' : 'var(--muted)'};">
+            ${sch.isCustom ? "Bu günə özəl" : "Standart"}
+          </span>
+        </div>
+        <div class="schedule-grid">
+          <div class="field" style="margin-bottom:0;">
+            <label>Başlanğıc</label>
+            <select id="schStartSel" onchange="previewScheduleText()">
+              ${START_TIME_CHOICES.map(t => `<option value="${t}" ${sch.start===t?'selected':''}>${t}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Bitmə</label>
+            <select id="schEndSel" onchange="previewScheduleText()">
+              ${END_TIME_CHOICES.map(t => `<option value="${t}" ${sch.end===t?'selected':''}>${t}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Aralıq</label>
+            <select id="schStepSel" onchange="previewScheduleText()">
+              ${[15, 20, 30, 45, 60].map(m => `<option value="${m}" ${sch.step===m?'selected':''}>${m} dəq</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <div class="schedule-preview" id="schPreviewBox">
+          Aktiv qəbul saatları: ${firstSl} – ${lastSl} (${activeSlots.length} aralıq)
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveDaySchedule()">Bu günə tətbiq et</button>
+          <button class="btn btn-dark btn-sm" style="flex:1;" onclick="saveDefaultSchedule()">Standart et (Hamıya)</button>
+          ${sch.isCustom ? `<button class="btn btn-red btn-sm" onclick="resetDaySchedule()">Sıfırla</button>` : ""}
+        </div>
+      </div>
+
+      <div class="admin-stats">
+        <div class="stat-box"><b style="color:var(--green);">${bookedCount}</b><span>Müştəri</span></div>
+        <div class="stat-box"><b style="color:var(--gold-hi);">${freeCount}</b><span>Boş saat</span></div>
+        <div class="stat-box"><b style="color:var(--red);">${blockedCount}</b><span>Bağlı saat</span></div>
+      </div>
+
+      <!-- Saatlar Siyahısı -->
+      <div class="glass-card">
+        <div class="step-header"><div class="step-title">🕒 Cədvəl (${firstSl} – ${lastSl})</div></div>
+        ${activeSlots.map(sl => renderAdminSlotRow(sl, dayBookings, sch.start)).join("")}
+        ${extraBookedKeys.length ? `
+          <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--gold-line);">
+            <div style="font-size:11px; font-weight:800; color:var(--amber); margin-bottom:8px;">⚠️ İş saatından kənar mövcud rezervlər:</div>
+            ${extraBookedKeys.map(k => renderAdminSlotRow(k.replace("_", ":"), dayBookings, sch.start)).join("")}
+          </div>
+        ` : ""}
+      </div>
+
+      <!-- Salon Adı və Şifrə -->
+      <div class="glass-card">
+        <div class="step-header"><div class="step-title">⚙️ Salon Adı & Şifrə</div></div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input type="text" id="shopNameInp" value="${escHtml(cloudConfig.shopName || "Fəridin bərbərxanası")}" placeholder="Bərbərxana adı" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--line); background:rgba(12,9,8,0.65); color:#fff;" />
+          <button class="btn btn-dark btn-sm" onclick="saveShopName()">Saxla</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="newAdminPassInp" placeholder="Yeni admin şifrəsi" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--line); background:rgba(12,9,8,0.65); color:#fff;" />
+          <button class="btn btn-dark btn-sm" onclick="changeAdminPassword()">Dəyiş</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAdminSlotRow(sl, dayBookings, schStart) {
+    const entry = dayBookings[slotToKey(sl)];
+    if (entry && entry.blocked) {
+      return `
+        <div class="admin-slot-row blocked">
+          <span class="slot-time-tag">${sl}</span>
+          <div class="slot-mid"><b style="color:#fca5a5;">🔒 Bağlı saat</b><small>Müştəriyə görünmür</small></div>
+          <button class="btn btn-green btn-sm" onclick="unblockSlot('${sl}')">🔓 Aç</button>
+        </div>
+      `;
+    }
+    if (entry && entry.name) {
+      const rawPhone = String(entry.phone || "").replace(/\D/g, "");
+      const fn = rawPhone.startsWith("994") ? rawPhone : "994" + rawPhone.replace(/^0/, "");
+      const left = formatCountdownText(getSlotRealDate(adminSelectedDate, sl, entry.schStart || schStart).getTime());
+      return `
+        <div class="admin-slot-row booked">
+          <span class="slot-time-tag">${sl}</span>
+          <div class="slot-mid">
+            <b>${escHtml(entry.name)} • ${escHtml(entry.service)}</b>
+            <small>📞 ${escHtml(entry.phone || "-")} • ${left === "Vaxt çatıb!" ? "Vaxtı çatıb" : left.replace(" orada olmalısınız", "")}</small>
+            ${entry.note ? `<div class="client-note-tag">📝 ${escHtml(entry.note)}</div>` : ""}
+          </div>
+          <div style="display:flex; gap:5px;">
+            ${rawPhone.length >= 7 ? `<a href="tel:+${fn}" class="btn btn-green btn-sm">📞</a><a href="https://wa.me/${fn}" target="_blank" class="btn btn-dark btn-sm">💬</a>` : ""}
+            <button class="btn btn-red btn-sm" onclick="deleteAdminBooking('${sl}')">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="admin-slot-row">
+        <span class="slot-time-tag">${sl}</span>
+        <div class="slot-mid"><b style="color:var(--muted); font-weight:600;">Boşdur</b></div>
+        <div style="display:flex; gap:5px;">
+          <button class="btn btn-gold btn-sm" onclick="openManualModal('${sl}')">+ Yaz</button>
+          <button class="btn btn-dark btn-sm" onclick="blockSlot('${sl}')">🔒</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function previewScheduleText() {
+    const s = document.getElementById("schStartSel").value;
+    const e = document.getElementById("schEndSel").value;
+    const st = Number(document.getElementById("schStepSel").value) || 30;
+    const arr = generateSlots(s, e, st);
+    const box = document.getElementById("schPreviewBox");
+    if (!arr.length) { box.textContent = "⚠️ Seçilmiş aralıqda vaxt yoxdur"; return; }
+    box.textContent = `Aktiv qəbul saatları: ${arr[0].label} – ${arr[arr.length - 1].label} (${arr.length} aralıq)`;
+  }
+
+  function saveDaySchedule() {
+    const start = document.getElementById("schStartSel").value;
+    const end = document.getElementById("schEndSel").value;
+    const step = Number(document.getElementById("schStepSel").value) || 30;
+    cloudConfig.daySchedules = cloudConfig.daySchedules || {};
+    cloudConfig.daySchedules[adminSelectedDate] = { start, end, step };
+    if (db) db.ref(`${ROOT_PATH}/config/daySchedules/${adminSelectedDate}`).set({ start, end, step });
+    showToast(`✅ ${formatDateAz(adminSelectedDate)} üçün saatlar yeniləndi!`);
+    renderAdminView();
+  }
+
+  function saveDefaultSchedule() {
+    const start = document.getElementById("schStartSel").value;
+    const end = document.getElementById("schEndSel").value;
+    const step = Number(document.getElementById("schStepSel").value) || 30;
+    cloudConfig.defaultSchedule = { start, end, step };
+    if (db) db.ref(`${ROOT_PATH}/config/defaultSchedule`).set({ start, end, step });
+    showToast("✅ Standart iş qrafiki yeniləndi!");
+    renderAdminView();
+  }
+
+  function resetDaySchedule() {
+    if (cloudConfig.daySchedules) delete cloudConfig.daySchedules[adminSelectedDate];
+    if (db) db.ref(`${ROOT_PATH}/config/daySchedules/${adminSelectedDate}`).remove();
+    showToast("Standart qrafikə qaytarıldı");
+    renderAdminView();
+  }
+
+  function saveBarberNote() {
+    const note = (document.getElementById("adminNoteInput").value || "").trim();
+    cloudConfig.note = note;
+    if (db) db.ref(`${ROOT_PATH}/config/note`).set(note);
+    showToast("✅ Qeyd yadda saxlanıldı!");
+  }
+  function clearBarberNote() {
+    cloudConfig.note = "";
+    if (db) db.ref(`${ROOT_PATH}/config/note`).set("");
+    showToast("Qeyd silindi");
+    renderAdminView();
+  }
+  function saveShopName() {
+    const nm = (document.getElementById("shopNameInp").value || "").trim();
+    if (!nm) return;
+    cloudConfig.shopName = nm;
+    document.getElementById("shopTitleDisplay").textContent = nm;
+    document.title = `${nm} — Rezervasiya`;
+    if (db) db.ref(`${ROOT_PATH}/config/shopName`).set(nm);
+    showToast("✅ Ad yeniləndi!");
+  }
+  function changeAdminDay(delta) {
+    const [y, m, d] = adminSelectedDate.split("-").map(Number);
+    adminSelectedDate = toISO(new Date(y, m - 1, d + delta));
+    renderAdminView();
+  }
+  function toggleCloseDay(iso) {
+    const cur = Boolean((cloudConfig.closedDays || {})[iso]);
+    if (!cloudConfig.closedDays) cloudConfig.closedDays = {};
+    if (cur) delete cloudConfig.closedDays[iso];
+    else cloudConfig.closedDays[iso] = true;
+    if (db) {
+      if (cur) db.ref(`${ROOT_PATH}/config/closedDays/${iso}`).remove();
+      else db.ref(`${ROOT_PATH}/config/closedDays/${iso}`).set(true);
+    }
+    showToast(cur ? "🔓 Gün açıldı" : "🔒 Gün bağlandı");
+    renderAdminView();
+  }
+  function blockSlot(sl) {
+    const key = slotToKey(sl), obj = { blocked: true, slot: sl, createdAt: Date.now() };
+    cloudBookings[adminSelectedDate] = cloudBookings[adminSelectedDate] || {};
+    cloudBookings[adminSelectedDate][key] = obj;
+    if (db) db.ref(`${ROOT_PATH}/bookings/${adminSelectedDate}/${key}`).set(obj);
+    showToast(`${sl} bağlandı`);
+    renderAdminView();
+  }
+  function unblockSlot(sl) {
+    const key = slotToKey(sl);
+    if (cloudBookings[adminSelectedDate]) delete cloudBookings[adminSelectedDate][key];
+    if (db) db.ref(`${ROOT_PATH}/bookings/${adminSelectedDate}/${key}`).remove();
+    showToast(`${sl} açıldı`);
+    renderAdminView();
+  }
+  function deleteAdminBooking(sl) {
+    const key = slotToKey(sl);
+    if (cloudBookings[adminSelectedDate]) delete cloudBookings[adminSelectedDate][key];
+    if (db) db.ref(`${ROOT_PATH}/bookings/${adminSelectedDate}/${key}`).remove();
+    showToast(`${sl} boşaldıldı`);
+    renderAdminView();
+  }
+  function openManualModal(sl) {
+    manualTargetSlot = sl;
+    document.getElementById("manualModalTitle").textContent = `➕ Əllə Rezerv (${sl})`;
+    document.getElementById("mName").value = "";
+    document.getElementById("mPhone").value = "";
+    document.getElementById("mNote").value = "";
+    document.getElementById("manualErr").style.display = "none";
+    document.getElementById("manualBookModal").classList.add("open");
+    setTimeout(() => document.getElementById("mName").focus(), 60);
+  }
+  function closeManualModal() { document.getElementById("manualBookModal").classList.remove("open"); }
+  function saveManualBooking() {
+    const name = document.getElementById("mName").value.trim();
+    const phone = document.getElementById("mPhone").value.trim();
+    const service = document.getElementById("mService").value;
+    const note = document.getElementById("mNote").value.trim();
+    const err = document.getElementById("manualErr");
+    if (!name) { err.textContent = "⚠️ Müştərinin adını yazın"; err.style.display = "block"; return; }
+    const sch = getScheduleForDate(adminSelectedDate);
+    const key = slotToKey(manualTargetSlot);
+    const record = {
+      id: "adm_" + Date.now(),
+      name,
+      phone,
+      note,
+      service,
+      slot: manualTargetSlot,
+      workDate: adminSelectedDate,
+      schStart: sch.start,
+      byAdmin: true,
+      createdAt: Date.now()
+    };
+    cloudBookings[adminSelectedDate] = cloudBookings[adminSelectedDate] || {};
+    cloudBookings[adminSelectedDate][key] = record;
+    if (db) db.ref(`${ROOT_PATH}/bookings/${adminSelectedDate}/${key}`).set(record);
+    closeManualModal();
+    showToast(`✅ ${manualTargetSlot} yazıldı`);
+    renderAdminView();
+  }
+  function changeAdminPassword() {
+    const np = (document.getElementById("newAdminPassInp").value || "").trim();
+    if (np.length < 4) { showToast("⚠️ Minimum 4 simvol"); return; }
+    const newHash = computeHash(np);
+    cloudConfig.adminHash = newHash;
+    if (db) db.ref(`${ROOT_PATH}/config/adminHash`).set(newHash);
+    document.getElementById("newAdminPassInp").value = "";
+    showToast("🔑 Şifrə yeniləndi!");
+  }
+
+  render();
+  startFirebase();
+</script>
+</body>
+</html>
