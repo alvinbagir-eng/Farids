@@ -91,7 +91,7 @@
 
     .hero-card {
       position: relative;
-      height: 176px;
+      height: 172px;
       overflow: hidden;
       background-color: #16110e;
       background-image:
@@ -102,7 +102,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 14px 16px 14px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--gold-line);
     }
 
@@ -373,39 +373,69 @@
       color: var(--muted);
     }
 
-    .days-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
+    /* 7 günlük tam görünən təqvim toru */
+    .days-grid-7 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
     }
-    .days-row::-webkit-scrollbar { display: none; }
-
     .day-pill {
-      min-width: 76px;
       background: var(--surface-2);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 10px 8px;
+      border-radius: 13px;
+      padding: 9px 6px;
       text-align: center;
       cursor: pointer;
-      flex-shrink: 0;
       transition: 0.18s ease;
+    }
+    .day-pill.today-span {
+      grid-column: span 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .day-pill.active {
       background: linear-gradient(145deg, #e2be70, #b88933);
       border-color: var(--gold-hi);
       color: #0c0908;
       box-shadow: 0 6px 18px rgba(212, 168, 83, 0.28);
-      transform: translateY(-1px);
     }
     .day-pill.closed-day {
       border-color: rgba(248, 113, 113, 0.35);
-      opacity: 0.65;
+      opacity: 0.68;
     }
-    .day-pill .d-top { font-size: 10.5px; font-weight: 700; opacity: 0.82; }
-    .day-pill .d-num { font-size: 14px; font-weight: 800; margin-top: 3px; }
+    .day-pill .d-top { font-size: 10.5px; font-weight: 700; opacity: 0.85; }
+    .day-pill .d-num { font-size: 13.5px; font-weight: 800; margin-top: 2px; }
+    .day-pill .d-avail { font-size: 10px; font-weight: 700; margin-top: 3px; color: var(--green); }
+    .day-pill.active .d-avail { color: #0c0908; opacity: 0.85; }
+    .day-pill.closed-day .d-avail { color: var(--red); }
+
+    /* Admin sürətli gün zolağı */
+    .days-row-scroll {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .days-row-scroll::-webkit-scrollbar { display: none; }
+    .admin-day-chip {
+      min-width: 72px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 7px 6px;
+      text-align: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .admin-day-chip.active {
+      background: var(--gold);
+      color: #0c0908;
+      border-color: var(--gold-hi);
+      font-weight: 800;
+    }
 
     .period-label {
       font-size: 11px;
@@ -562,7 +592,6 @@
     .btn-green { background: var(--green-bg); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.35); }
     .btn-sm { padding: 7px 11px; font-size: 12px; width: auto; border-radius: 9px; }
 
-    /* Admin Panel */
     .admin-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -591,7 +620,7 @@
       background: var(--gold-dim);
       border: 1px solid var(--gold-line);
       border-radius: 9px;
-      padding: 7px 10px;
+      padding: 8px 10px;
       margin-bottom: 10px;
       text-align: center;
       font-weight: 600;
@@ -807,15 +836,22 @@
   const MONTHS_AZ = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
   const DAYS_SHORT_AZ = ["Baz","B.e","Ç.a","Çər","C.a","Cüm","Şən"];
 
-  // Bütün saat seçimləri (Admin iş saatı seçimi üçün)
-  const START_TIME_CHOICES = [
-    "09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30",
-    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","17:00","18:00"
-  ];
-  const END_TIME_CHOICES = [
-    "15:00","16:00","17:00","18:00","18:30","19:00","19:30","20:00","20:30",
-    "21:00","21:30","22:00","22:30","23:00","23:30","00:00","01:00","02:00","03:00","04:00"
-  ];
+  // Genişləndirilmiş saat seçimləri (08:00-dan 05:00-a qədər istənilən saatı seçə bilmək üçün)
+  const START_TIME_CHOICES = [];
+  for (let h = 8; h <= 22; h++) {
+    START_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:00`);
+    if (h < 22) START_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:30`);
+  }
+
+  const END_TIME_CHOICES = [];
+  for (let h = 12; h <= 23; h++) {
+    END_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:00`);
+    END_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:30`);
+  }
+  for (let h = 0; h <= 5; h++) {
+    END_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:00`);
+    if (h < 5) END_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:30`);
+  }
 
   let cloudConfig = {
     shopName: "Fəridin bərbərxanası",
@@ -890,7 +926,7 @@
   function generateSlots(startStr, endStr, stepMins) {
     const sMin = toMins(startStr);
     let eMin = toMins(endStr);
-    if (eMin <= sMin) eMin += 1440; // Gecəyarısını keçirsə (məs. 04:00)
+    if (eMin <= sMin) eMin += 1440;
     const step = Math.max(15, Number(stepMins) || 30);
     const list = [];
     for (let m = sMin; m + step <= eMin; m += step) {
@@ -912,9 +948,8 @@
       const sMin = toMins(ySch.start);
       let eMin = toMins(ySch.end);
       if (eMin <= sMin) {
-        // Dünənki iş günü gecəyarısını keçib
         const nowMin = (now.getHours() * 60) + now.getMinutes();
-        if (nowMin < (eMin)) return yISO;
+        if (nowMin < eMin) return yISO;
       }
     }
     return toISO(now);
@@ -923,7 +958,7 @@
   selectedDate = getActiveWorkDateISO();
   adminSelectedDate = getActiveWorkDateISO();
 
-  function getUpcomingWorkDates(count = 14) {
+  function getUpcomingWorkDates(count = 7) {
     const baseISO = getActiveWorkDateISO();
     const [y, m, d] = baseISO.split("-").map(Number);
     const list = [];
@@ -952,6 +987,18 @@
     return getSlotRealDate(workDateISO, slot, startStr).getTime() <= Date.now();
   }
 
+  function countFreeSlotsForDay(dateISO) {
+    if ((cloudConfig.closedDays || {})[dateISO]) return 0;
+    const sch = getScheduleForDate(dateISO);
+    const slots = generateSlots(sch.start, sch.end, sch.step);
+    const dayB = cloudBookings[dateISO] || {};
+    let free = 0;
+    slots.forEach(s => {
+      if (!isSlotPassed(dateISO, s.label, sch.start) && !dayB[slotToKey(s.label)]) free++;
+    });
+    return free;
+  }
+
   function formatCountdownText(targetMs) {
     const diff = targetMs - Date.now();
     if (diff <= 0) return "Vaxt çatıb!";
@@ -969,7 +1016,6 @@
     return parts.join(" ") + " sonra orada olmalısınız";
   }
 
-  // Müştərinin YALNIZ öz yazdığı rezervasiyalar
   function getMyBookingsLocal() {
     try {
       const raw = localStorage.getItem("barber_my_bookings_v2");
@@ -1044,7 +1090,6 @@
     const savedNote = document.getElementById("cNote")?.value || "";
     let html = "";
 
-    // Bərbərin Qeydi
     if (cloudConfig.note && cloudConfig.note.trim() !== "") {
       html += `
         <div class="barber-note-banner">
@@ -1054,7 +1099,6 @@
       `;
     }
 
-    // Yalnız bu müştərinin özünün etdiyi aktiv rezervasiyalar
     const myBookings = getMyBookingsLocal();
     const activeReceipts = [];
     myBookings.forEach(myB => {
@@ -1094,7 +1138,8 @@
       `;
     });
 
-    const days = getUpcomingWorkDates(14);
+    // 7 günlük rezervasiya (hamısı birdən görünür)
+    const days = getUpcomingWorkDates(7);
     if (!days.includes(selectedDate)) selectedDate = days[0];
     const dayBookings = cloudBookings[selectedDate] || {};
     const isDayClosed = Boolean((cloudConfig.closedDays || {})[selectedDate]);
@@ -1110,22 +1155,25 @@
     ];
 
     html += `
-      <!-- 1. GÜN SEÇİMİ -->
+      <!-- 1. 7 GÜNLÜK TƏQVİM (TAM GÖRÜNÜR) -->
       <div class="glass-card">
         <div class="step-header">
-          <div class="step-title"><span class="step-num">1</span> Günü seçin</div>
+          <div class="step-title"><span class="step-num">1</span> Günü seçin (7 gün)</div>
           <span class="step-meta">${formatDateAz(selectedDate)}</span>
         </div>
-        <div class="days-row">
+        <div class="days-grid-7">
           ${days.map((iso, idx) => {
             const [y, m, d] = iso.split("-").map(Number);
             const dt = new Date(y, m - 1, d);
             const top = idx === 0 ? "Bu gün" : (idx === 1 ? "Sabah" : DAYS_SHORT_AZ[dt.getDay()]);
             const closed = Boolean((cloudConfig.closedDays || {})[iso]);
+            const freeCnt = countFreeSlotsForDay(iso);
+            const availTxt = closed ? "🔒 Bağlı" : (freeCnt > 0 ? `${freeCnt} boş` : "Doludur");
             return `
-              <div class="day-pill ${selectedDate === iso ? "active" : ""} ${closed ? "closed-day" : ""}" onclick="selectClientDate('${iso}')">
-                <div class="d-top">${top}${closed ? " 🔒" : ""}</div>
+              <div class="day-pill ${idx === 0 ? "today-span" : ""} ${selectedDate === iso ? "active" : ""} ${closed ? "closed-day" : ""}" onclick="selectClientDate('${iso}')">
+                <div class="d-top">${top}</div>
                 <div class="d-num">${d} ${MONTHS_AZ[m - 1].slice(0, 3)}</div>
+                <div class="d-avail">${availTxt}</div>
               </div>
             `;
           }).join("")}
@@ -1157,7 +1205,7 @@
         `}
       </div>
 
-      <!-- 3. AD, NÖMRƏ, QEYD VƏ XİDMƏT SEÇİMİ -->
+      <!-- 3. AD, NÖMRƏ, QEYD VƏ XİDMƏT -->
       <div class="glass-card" id="clientFormCard">
         <div class="step-header">
           <div class="step-title"><span class="step-num">3</span> Məlumatlarınız</div>
@@ -1313,7 +1361,6 @@
     }
   }
 
-  // Yalnız özü (clientToken uyğun gələndə) ləğv edə bilər
   function cancelMyOwnBooking(workDate, slot, bookingId) {
     const key = slotToKey(slot);
     if (db) {
@@ -1373,6 +1420,12 @@
     render();
   }
 
+  function selectAdminDay(iso) {
+    if (!iso) return;
+    adminSelectedDate = iso;
+    renderAdminView();
+  }
+
   function renderAdminView() {
     const main = document.getElementById("mainContent");
     const dayBookings = cloudBookings[adminSelectedDate] || {};
@@ -1380,8 +1433,9 @@
     const sch = getScheduleForDate(adminSelectedDate);
     const activeSlots = generateSlots(sch.start, sch.end, sch.step).map(s => s.label);
     const activeSet = new Set(activeSlots);
+    const quickDays = getUpcomingWorkDates(14);
+    const selDateLbl = formatDateAz(adminSelectedDate);
 
-    // İş saatından kənarda qalan mövcud rezervlər (əgər bərbər saatı sonradan qısaldıbsa itməsin)
     const extraBookedKeys = Object.keys(dayBookings).filter(k => {
       const sl = k.replace("_", ":");
       const b = dayBookings[k];
@@ -1405,36 +1459,41 @@
         <button class="btn btn-red btn-sm" onclick="adminLogout()">🚪 Çıxış</button>
       </div>
 
-      <!-- Bərbərin Qeydi -->
-      <div class="glass-card">
-        <div class="step-header"><div class="step-title">📌 Müştərilər üçün Qeyd</div></div>
-        <div class="field" style="margin-bottom:8px;">
-          <textarea id="adminNoteInput" rows="2" placeholder="Məs: Bazar ertəsi işdə deyiləm...">${escHtml(cloudConfig.note || "")}</textarea>
+      <!-- GÜN SEÇİMİ (Bütün idarəetmə seçilmiş günə tətbiq olunur) -->
+      <div class="glass-card" style="border-color:var(--gold-line);">
+        <div class="step-header">
+          <div class="step-title">📅 Gün seç: ${selDateLbl}</div>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveBarberNote()">💾 Qeydi Paylaş</button>
-          <button class="btn btn-dark btn-sm" onclick="clearBarberNote()">🗑️ Təmizlə</button>
+        <div class="days-row-scroll">
+          ${quickDays.map((iso, idx) => {
+            const [y, m, d] = iso.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            const top = idx === 0 ? "Bu gün" : (idx === 1 ? "Sabah" : DAYS_SHORT_AZ[dt.getDay()]);
+            const hasCustom = Boolean((cloudConfig.daySchedules || {})[iso]);
+            const closed = Boolean((cloudConfig.closedDays || {})[iso]);
+            return `
+              <div class="admin-day-chip ${adminSelectedDate === iso ? "active" : ""}" onclick="selectAdminDay('${iso}')">
+                <div style="font-size:10px; opacity:0.8;">${top}${closed ? " 🔒" : (hasCustom ? " ⏰" : "")}</div>
+                <div style="font-size:13px; font-weight:800;">${d} ${MONTHS_AZ[m - 1].slice(0, 3)}</div>
+              </div>
+            `;
+          }).join("")}
         </div>
-      </div>
-
-      <!-- Tarix seçimi və Günü Bağla -->
-      <div class="glass-card">
-        <div class="step-header"><div class="step-title">📅 ${formatDateAz(adminSelectedDate)}</div></div>
         <div style="display:flex; gap:6px; margin-bottom:10px;">
           <button class="btn btn-dark btn-sm" onclick="changeAdminDay(-1)">‹</button>
-          <input type="date" value="${adminSelectedDate}" onchange="adminSelectedDate=this.value; renderAdminView()" style="flex:1; padding:8px; border-radius:10px; border:1px solid var(--line); background:rgba(12,9,8,0.65); color:#fff; font-weight:700; text-align:center; color-scheme:dark;" />
+          <input type="date" value="${adminSelectedDate}" onchange="selectAdminDay(this.value)" style="flex:1; padding:8px; border-radius:10px; border:1px solid var(--line); background:rgba(12,9,8,0.65); color:#fff; font-weight:700; text-align:center; color-scheme:dark;" />
           <button class="btn btn-dark btn-sm" onclick="changeAdminDay(1)">›</button>
-          <button class="btn btn-dark btn-sm" onclick="adminSelectedDate=getActiveWorkDateISO(); renderAdminView()">Bu gün</button>
+          <button class="btn btn-dark btn-sm" onclick="selectAdminDay(getActiveWorkDateISO())">Bu gün</button>
         </div>
         <button class="btn ${isClosed ? "btn-green" : "btn-red"} btn-sm" style="width:100%;" onclick="toggleCloseDay('${adminSelectedDate}')">
-          ${isClosed ? "🔓 Bu gün bağlıdır — Yenidən Aç" : "🔒 Bu günü tam bağla (İşdə deyiləm)"}
+          ${isClosed ? `🔓 ${selDateLbl} bağlıdır — Yenidən Aç` : `🔒 ${selDateLbl} tarixini tam bağla`}
         </button>
       </div>
 
-      <!-- İş Saatları & Aralıq Tənzimləməsi -->
+      <!-- İŞ SAATLARI & ARALIQ TƏNZİMLƏMƏSİ -->
       <div class="glass-card">
         <div class="step-header">
-          <div class="step-title">⏰ İş Saatları & Aralıq</div>
+          <div class="step-title">⏰ Saatlar: ${selDateLbl}</div>
           <span class="step-meta" style="color:${sch.isCustom ? 'var(--gold-hi)' : 'var(--muted)'};">
             ${sch.isCustom ? "Bu günə özəl" : "Standart"}
           </span>
@@ -1460,11 +1519,11 @@
           </div>
         </div>
         <div class="schedule-preview" id="schPreviewBox">
-          Aktiv qəbul saatları: ${firstSl} – ${lastSl} (${activeSlots.length} aralıq)
+          Aktiv qəbul: ${firstSl} – ${lastSl} (${activeSlots.length} aralıq)
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveDaySchedule()">Bu günə tətbiq et</button>
-          <button class="btn btn-dark btn-sm" style="flex:1;" onclick="saveDefaultSchedule()">Standart et (Hamıya)</button>
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveDaySchedule()">💾 ${selDateLbl} üçün saxla</button>
+          <button class="btn btn-dark btn-sm" onclick="saveDefaultSchedule()">Standart et</button>
           ${sch.isCustom ? `<button class="btn btn-red btn-sm" onclick="resetDaySchedule()">Sıfırla</button>` : ""}
         </div>
       </div>
@@ -1475,9 +1534,9 @@
         <div class="stat-box"><b style="color:var(--red);">${blockedCount}</b><span>Bağlı saat</span></div>
       </div>
 
-      <!-- Saatlar Siyahısı -->
+      <!-- SAATLAR SİYAHISI -->
       <div class="glass-card">
-        <div class="step-header"><div class="step-title">🕒 Cədvəl (${firstSl} – ${lastSl})</div></div>
+        <div class="step-header"><div class="step-title">🕒 ${selDateLbl} Cədvəli (${firstSl} – ${lastSl})</div></div>
         ${activeSlots.map(sl => renderAdminSlotRow(sl, dayBookings, sch.start)).join("")}
         ${extraBookedKeys.length ? `
           <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--gold-line);">
@@ -1487,7 +1546,19 @@
         ` : ""}
       </div>
 
-      <!-- Salon Adı və Şifrə -->
+      <!-- BƏRBƏRİN QEYDİ -->
+      <div class="glass-card">
+        <div class="step-header"><div class="step-title">📌 Müştərilər üçün Qeyd (Elan)</div></div>
+        <div class="field" style="margin-bottom:8px;">
+          <textarea id="adminNoteInput" rows="2" placeholder="Məs: Bazar ertəsi işdə deyiləm...">${escHtml(cloudConfig.note || "")}</textarea>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveBarberNote()">💾 Qeydi Paylaş</button>
+          <button class="btn btn-dark btn-sm" onclick="clearBarberNote()">🗑️ Təmizlə</button>
+        </div>
+      </div>
+
+      <!-- SALON ADI VƏ ŞİFRƏ -->
       <div class="glass-card">
         <div class="step-header"><div class="step-title">⚙️ Salon Adı & Şifrə</div></div>
         <div style="display:flex; gap:8px; margin-bottom:10px;">
@@ -1551,7 +1622,7 @@
     const arr = generateSlots(s, e, st);
     const box = document.getElementById("schPreviewBox");
     if (!arr.length) { box.textContent = "⚠️ Seçilmiş aralıqda vaxt yoxdur"; return; }
-    box.textContent = `Aktiv qəbul saatları: ${arr[0].label} – ${arr[arr.length - 1].label} (${arr.length} aralıq)`;
+    box.textContent = `Aktiv qəbul: ${arr[0].label} – ${arr[arr.length - 1].label} (${arr.length} aralıq)`;
   }
 
   function saveDaySchedule() {
@@ -1561,7 +1632,7 @@
     cloudConfig.daySchedules = cloudConfig.daySchedules || {};
     cloudConfig.daySchedules[adminSelectedDate] = { start, end, step };
     if (db) db.ref(`${ROOT_PATH}/config/daySchedules/${adminSelectedDate}`).set({ start, end, step });
-    showToast(`✅ ${formatDateAz(adminSelectedDate)} üçün saatlar yeniləndi!`);
+    showToast(`✅ ${formatDateAz(adminSelectedDate)} saatları yeniləndi!`);
     renderAdminView();
   }
 
