@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fərid Bərbər" />
   <meta name="theme-color" content="#0d0a08" />
   <title>Fəridin bərbərxanası — Rezervasiya</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,6 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #0c0908;
@@ -373,17 +376,21 @@
       color: var(--muted);
     }
 
-    /* 7 günlük tam görünən təqvim toru */
-    .days-grid-7 {
+    /* Dinamik günlər toru (2 gün və ya artırılmış günlər üçün) */
+    .days-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 7px;
+      gap: 8px;
     }
+    .days-grid.cols-1 { grid-template-columns: 1fr; }
+    .days-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .days-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
     .day-pill {
       background: var(--surface-2);
       border: 1px solid var(--line);
       border-radius: 13px;
-      padding: 9px 6px;
+      padding: 11px 8px;
       text-align: center;
       cursor: pointer;
       transition: 0.18s ease;
@@ -404,13 +411,12 @@
       border-color: rgba(248, 113, 113, 0.35);
       opacity: 0.68;
     }
-    .day-pill .d-top { font-size: 10.5px; font-weight: 700; opacity: 0.85; }
-    .day-pill .d-num { font-size: 13.5px; font-weight: 800; margin-top: 2px; }
-    .day-pill .d-avail { font-size: 10px; font-weight: 700; margin-top: 3px; color: var(--green); }
+    .day-pill .d-top { font-size: 11px; font-weight: 700; opacity: 0.88; }
+    .day-pill .d-num { font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .day-pill .d-avail { font-size: 10.5px; font-weight: 700; margin-top: 3px; color: var(--green); }
     .day-pill.active .d-avail { color: #0c0908; opacity: 0.85; }
     .day-pill.closed-day .d-avail { color: var(--red); }
 
-    /* Admin sürətli gün zolağı */
     .days-row-scroll {
       display: flex;
       gap: 7px;
@@ -590,7 +596,7 @@
     .btn-dark { background: var(--surface-2); color: var(--cream); border: 1px solid var(--line); }
     .btn-red { background: var(--red-bg); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.35); }
     .btn-green { background: var(--green-bg); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.35); }
-    .btn-sm { padding: 7px 11px; font-size: 12px; width: auto; border-radius: 9px; }
+    .btn-sm { padding: 8px 11px; font-size: 12px; width: auto; border-radius: 9px; }
 
     .admin-stats {
       display: grid;
@@ -663,6 +669,86 @@
       padding: 3px 7px;
       border-radius: 4px;
       word-break: break-word;
+    }
+
+    /* Bildiriş Toggle və Guide */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: rgba(12, 9, 8, 0.55);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      margin-bottom: 10px;
+    }
+    .toggle-info b { display: block; font-size: 13px; color: var(--cream); }
+    .toggle-info small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #3a302a;
+      border: 1px solid var(--line);
+      transition: .25s;
+      border-radius: 30px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #e2d9cd;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    .switch input:checked + .slider {
+      background-color: #22c55e;
+      border-color: #4ade80;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(22px);
+      background-color: #fff;
+    }
+
+    .guide-box {
+      background: rgba(212, 168, 83, 0.08);
+      border: 1px dashed var(--gold-line);
+      border-radius: 11px;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #e6dacb;
+      margin-top: 10px;
+    }
+    .guide-box b { color: var(--gold-hi); }
+
+    /* QR Kod Kartı */
+    .qr-preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0 12px;
+    }
+    .qr-canvas {
+      max-width: 260px;
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      border: 1px solid var(--gold-line);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
 
     .modal-backdrop {
@@ -791,6 +877,18 @@
   </div>
 </div>
 
+<!-- QR Şəkli iPhone-da saxlamaq üçün Modal -->
+<div class="modal-backdrop" id="qrImageModal">
+  <div class="modal" style="text-align:center;">
+    <div class="modal-head">
+      <div class="modal-title">📸 Şəkli iPhone-da saxla</div>
+      <button class="close-x" onclick="closeQrImageModal()">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Şəklin üzərinə barmağınızla <b>basıb saxlayın</b> və <b>"Fotoşəkillərə əlavə et"</b> seçin:</p>
+    <img id="qrSavePreviewImg" alt="QR Kod" style="width:100%; max-width:280px; border-radius:14px; border:1px solid var(--gold-line);" />
+  </div>
+</div>
+
 <div class="app-shell">
   <div class="barber-pole-bar"></div>
 
@@ -824,6 +922,7 @@
 
   const ROOT_PATH = "barber_tebriz_app";
   const DEFAULT_HASH = "827221746:811344025";
+  const DEFAULT_QR_URL = "https://alvinbagir-eng.github.io/Farids/";
 
   let db = null;
   try {
@@ -836,7 +935,6 @@
   const MONTHS_AZ = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
   const DAYS_SHORT_AZ = ["Baz","B.e","Ç.a","Çər","C.a","Cüm","Şən"];
 
-  // Genişləndirilmiş saat seçimləri (08:00-dan 05:00-a qədər istənilən saatı seçə bilmək üçün)
   const START_TIME_CHOICES = [];
   for (let h = 8; h <= 22; h++) {
     START_TIME_CHOICES.push(`${String(h).padStart(2, "0")}:00`);
@@ -859,9 +957,21 @@
     closedDays: {},
     defaultSchedule: { start: "13:00", end: "04:00", step: 30 },
     daySchedules: {},
-    adminHash: ""
+    adminHash: "",
+    bookingDays: 2,
+    notifEnabled: true,
+    notifyOnCancel: true,
+    ntfyTopic: "",
+    tgBotToken: "",
+    tgChatId: "",
+    qrUrl: DEFAULT_QR_URL
   };
   let cloudBookings = {};
+  let configLoadedFromCloud = false;
+  let isFirstBookingsLoad = true;
+  let knownBookingIds = new Set();
+  let ntfyAutoInitDone = false;
+
   let isAdminMode = sessionStorage.getItem("barber_admin_ok") === "1";
 
   let selectedDate = "";
@@ -902,7 +1012,7 @@
     t.textContent = msg;
     t.style.display = "block";
     clearTimeout(window._tt);
-    window._tt = setTimeout(() => { t.style.display = "none"; }, 2400);
+    window._tt = setTimeout(() => { t.style.display = "none"; }, 2600);
   }
 
   function toISO(d) {
@@ -958,7 +1068,7 @@
   selectedDate = getActiveWorkDateISO();
   adminSelectedDate = getActiveWorkDateISO();
 
-  function getUpcomingWorkDates(count = 7) {
+  function getUpcomingWorkDates(count = 2) {
     const baseISO = getActiveWorkDateISO();
     const [y, m, d] = baseISO.split("-").map(Number);
     const list = [];
@@ -1038,6 +1148,102 @@
     saveMyBookingsLocal(list);
   }
 
+  // ================= BİLDİRİŞ FUNKSİYALARI =================
+  function playChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(880, now);
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.25);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(1174.66, now + 0.16);
+      gain2.gain.setValueAtTime(0.2, now + 0.16);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.16);
+      osc2.stop(now + 0.5);
+    } catch (e) {}
+  }
+
+  function showLocalBrowserNotification(title, body) {
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body });
+      }
+    } catch (e) {}
+  }
+
+  function sendRemotePushNotification(title, message, tags = "scissors", customTopic = null) {
+    if (cloudConfig.notifEnabled === false) return;
+    const topic = (customTopic !== null ? customTopic : (cloudConfig.ntfyTopic || "")).trim();
+    if (topic) {
+      const params = new URLSearchParams({
+        title,
+        priority: "high",
+        tags,
+        click: cloudConfig.qrUrl || DEFAULT_QR_URL
+      });
+      fetch(`https://ntfy.sh/${encodeURIComponent(topic)}?${params.toString()}`, {
+        method: "POST",
+        body: message
+      }).catch(() => {});
+    }
+    const tgToken = (cloudConfig.tgBotToken || "").trim();
+    const tgChat = (cloudConfig.tgChatId || "").trim();
+    if (tgToken && tgChat) {
+      const tgText = `${title}\n${message}`;
+      const tgUrl = `https://api.telegram.org/bot${encodeURIComponent(tgToken)}/sendMessage?chat_id=${encodeURIComponent(tgChat)}&text=${encodeURIComponent(tgText)}`;
+      fetch(tgUrl, { mode: "no-cors" }).catch(() => {});
+    }
+  }
+
+  function checkNewBookingsForInAppAlert(bookingsMap) {
+    const currentIds = new Set();
+    const newEntries = [];
+    Object.keys(bookingsMap || {}).forEach(dateKey => {
+      const dayObj = bookingsMap[dateKey] || {};
+      Object.keys(dayObj).forEach(slotKey => {
+        const entry = dayObj[slotKey];
+        if (entry && entry.id && !entry.blocked) {
+          currentIds.add(entry.id);
+          if (!isFirstBookingsLoad && !knownBookingIds.has(entry.id) && !entry.byAdmin) {
+            newEntries.push(entry);
+          }
+        }
+      });
+    });
+
+    knownBookingIds = currentIds;
+    if (isFirstBookingsLoad) {
+      isFirstBookingsLoad = false;
+      return;
+    }
+
+    if (newEntries.length > 0 && isAdminMode && cloudConfig.notifEnabled !== false) {
+      playChime();
+      newEntries.forEach(entry => {
+        const title = `✂️ Yeni Rezerv: ${entry.name}`;
+        const body = `${formatDateAz(entry.workDate)} • Saat ${entry.slot} (${entry.service})`;
+        showToast(`🔔 ${title} (${entry.slot})`);
+        showLocalBrowserNotification(title, body);
+      });
+    }
+  }
+
   function startFirebase() {
     if (!db) {
       document.getElementById("liveBadge").innerHTML = '<span class="dot offline"></span> Lokal';
@@ -1057,14 +1263,23 @@
         closedDays: val.closedDays || {},
         defaultSchedule: val.defaultSchedule || { start: "13:00", end: "04:00", step: 30 },
         daySchedules: val.daySchedules || {},
-        adminHash: val.adminHash || ""
+        adminHash: val.adminHash || "",
+        bookingDays: Number(val.bookingDays) >= 1 ? Number(val.bookingDays) : 2,
+        notifEnabled: val.notifEnabled !== undefined ? Boolean(val.notifEnabled) : true,
+        notifyOnCancel: val.notifyOnCancel !== undefined ? Boolean(val.notifyOnCancel) : true,
+        ntfyTopic: val.ntfyTopic || "",
+        tgBotToken: val.tgBotToken || "",
+        tgChatId: val.tgChatId || "",
+        qrUrl: val.qrUrl || DEFAULT_QR_URL
       };
+      configLoadedFromCloud = true;
       document.getElementById("shopTitleDisplay").textContent = cloudConfig.shopName;
       document.title = `${cloudConfig.shopName} — Rezervasiya`;
       render();
     });
     db.ref(`${ROOT_PATH}/bookings`).on("value", snap => {
       cloudBookings = snap.val() || {};
+      checkNewBookingsForInAppAlert(cloudBookings);
       render();
     });
   }
@@ -1138,8 +1353,8 @@
       `;
     });
 
-    // 7 günlük rezervasiya (hamısı birdən görünür)
-    const days = getUpcomingWorkDates(7);
+    const maxDays = Math.min(14, Math.max(1, Number(cloudConfig.bookingDays) || 2));
+    const days = getUpcomingWorkDates(maxDays);
     if (!days.includes(selectedDate)) selectedDate = days[0];
     const dayBookings = cloudBookings[selectedDate] || {};
     const isDayClosed = Boolean((cloudConfig.closedDays || {})[selectedDate]);
@@ -1148,6 +1363,9 @@
     const daySlotObjs = slotObjs.filter(s => !s.isNight);
     const nightSlotObjs = slotObjs.filter(s => s.isNight);
 
+    const gridColsClass = days.length === 1 ? "cols-1" : (days.length === 2 ? "cols-2" : (days.length === 3 ? "cols-3" : ""));
+    const useTodaySpan = days.length >= 4 && ((days.length + 1) % 4 === 0);
+
     const services = [
       { name: "Saç", ico: "✂️" },
       { name: "Saqqal", ico: "🧔" },
@@ -1155,13 +1373,13 @@
     ];
 
     html += `
-      <!-- 1. 7 GÜNLÜK TƏQVİM (TAM GÖRÜNÜR) -->
+      <!-- 1. GÜN SEÇİMİ -->
       <div class="glass-card">
         <div class="step-header">
-          <div class="step-title"><span class="step-num">1</span> Günü seçin (7 gün)</div>
+          <div class="step-title"><span class="step-num">1</span> Günü seçin</div>
           <span class="step-meta">${formatDateAz(selectedDate)}</span>
         </div>
-        <div class="days-grid-7">
+        <div class="days-grid ${gridColsClass}">
           ${days.map((iso, idx) => {
             const [y, m, d] = iso.split("-").map(Number);
             const dt = new Date(y, m - 1, d);
@@ -1170,7 +1388,7 @@
             const freeCnt = countFreeSlotsForDay(iso);
             const availTxt = closed ? "🔒 Bağlı" : (freeCnt > 0 ? `${freeCnt} boş` : "Doludur");
             return `
-              <div class="day-pill ${idx === 0 ? "today-span" : ""} ${selectedDate === iso ? "active" : ""} ${closed ? "closed-day" : ""}" onclick="selectClientDate('${iso}')">
+              <div class="day-pill ${(idx === 0 && useTodaySpan) ? "today-span" : ""} ${selectedDate === iso ? "active" : ""} ${closed ? "closed-day" : ""}" onclick="selectClientDate('${iso}')">
                 <div class="d-top">${top}</div>
                 <div class="d-num">${d} ${MONTHS_AZ[m - 1].slice(0, 3)}</div>
                 <div class="d-avail">${availTxt}</div>
@@ -1327,6 +1545,15 @@
       createdAt: Date.now()
     };
 
+    const notifTitle = "✂️ Yeni Rezervasiya!";
+    const notifBody =
+      `👤 Müştəri: ${name}\n` +
+      `💈 Xidmət: ${selectedService}\n` +
+      `📅 Tarix: ${formatDateAz(selectedDate)}\n` +
+      `🕒 Saat: ${selectedSlot}\n` +
+      `📞 Tel: ${phone}` +
+      (note ? `\n📝 Qeyd: ${note}` : "");
+
     const key = slotToKey(selectedSlot);
     if (db) {
       const ref = db.ref(`${ROOT_PATH}/bookings/${selectedDate}/${key}`);
@@ -1341,6 +1568,7 @@
           selectedSlot = "";
           return;
         }
+        sendRemotePushNotification(notifTitle, notifBody, "scissors,bell");
         addMyBookingLocal(record);
         selectedSlot = "";
         selectedService = "";
@@ -1352,6 +1580,7 @@
     } else {
       cloudBookings[selectedDate] = cloudBookings[selectedDate] || {};
       cloudBookings[selectedDate][key] = record;
+      sendRemotePushNotification(notifTitle, notifBody, "scissors,bell");
       addMyBookingLocal(record);
       selectedSlot = "";
       selectedService = "";
@@ -1369,6 +1598,13 @@
         if (val && val.id === bookingId && val.clientToken === MY_CLIENT_TOKEN) {
           db.ref(`${ROOT_PATH}/bookings/${workDate}/${key}`).remove();
           removeMyBookingLocal(workDate, slot);
+          if (cloudConfig.notifyOnCancel !== false) {
+            sendRemotePushNotification(
+              "❌ Rezervasiya Ləğv Edildi",
+              `👤 ${val.name}\n📅 ${formatDateAz(workDate)}\n🕒 Saat ${slot} indi boşdur`,
+              "x"
+            );
+          }
           showToast("Rezervasiyanız ləğv edildi");
           renderClientView();
         } else if (!val) {
@@ -1426,7 +1662,19 @@
     renderAdminView();
   }
 
+  function ensureDefaultNtfyTopic() {
+    if (ntfyAutoInitDone || !configLoadedFromCloud) return;
+    ntfyAutoInitDone = true;
+    if (!cloudConfig.ntfyTopic) {
+      const gen = "ferid-barber-" + Math.random().toString(36).slice(2, 8);
+      cloudConfig.ntfyTopic = gen;
+      if (db) db.ref(`${ROOT_PATH}/config/ntfyTopic`).set(gen);
+    }
+  }
+
   function renderAdminView() {
+    ensureDefaultNtfyTopic();
+
     const main = document.getElementById("mainContent");
     const dayBookings = cloudBookings[adminSelectedDate] || {};
     const isClosed = Boolean((cloudConfig.closedDays || {})[adminSelectedDate]);
@@ -1452,6 +1700,8 @@
 
     const firstSl = activeSlots[0] || "-";
     const lastSl = activeSlots[activeSlots.length - 1] || "-";
+    const curBookingDays = Math.min(14, Math.max(1, Number(cloudConfig.bookingDays) || 2));
+    const browserNotifPerm = ("Notification" in window) ? Notification.permission : "unsupported";
 
     main.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -1459,7 +1709,7 @@
         <button class="btn btn-red btn-sm" onclick="adminLogout()">🚪 Çıxış</button>
       </div>
 
-      <!-- GÜN SEÇİMİ (Bütün idarəetmə seçilmiş günə tətbiq olunur) -->
+      <!-- GÜN SEÇİMİ -->
       <div class="glass-card" style="border-color:var(--gold-line);">
         <div class="step-header">
           <div class="step-title">📅 Gün seç: ${selDateLbl}</div>
@@ -1546,6 +1796,125 @@
         ` : ""}
       </div>
 
+      <!-- NASTROYKA: MÜŞTƏRİYƏ GÖRÜNƏN GÜN SAYI -->
+      <div class="glass-card" style="border-color:var(--gold-line);">
+        <div class="step-header">
+          <div class="step-title">📆 Müştəri Ekranında Gün Sayı</div>
+          <span class="step-meta" style="color:var(--gold-hi);">${curBookingDays} gün</span>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label>Müştəri neçə gün irəli rezerv edə bilsin?</label>
+          <div style="display:flex; gap:8px;">
+            <select id="bookingDaysSel" style="flex:1;">
+              ${[1, 2, 3, 4, 5, 7, 10, 14].map(n => `
+                <option value="${n}" ${curBookingDays===n?'selected':''}>
+                  ${n === 1 ? "1 gün (Yalnız Bu gün)" : (n === 2 ? "2 gün (Bu gün və Sabah)" : `${n} gün`)}
+                </option>
+              `).join("")}
+            </select>
+            <button class="btn btn-gold btn-sm" onclick="saveBookingDays()">💾 Saxla</button>
+          </div>
+        </div>
+        <small style="font-size:11px; color:var(--muted);">Standart olaraq 2 gündür (Bu gün və Sabah). İstədiyiniz vaxt buradan artırıb azalda bilərsiniz.</small>
+      </div>
+
+      <!-- BİLDİRİŞ TƏNZİMLƏMƏLƏRİ (İPHONE + AÇ/BAĞLA) -->
+      <div class="glass-card" style="border-color:var(--gold-line);">
+        <div class="step-header">
+          <div class="step-title">🔔 Bildiriş Tənzimləmələri</div>
+          <span class="step-meta" style="color:${cloudConfig.notifEnabled ? 'var(--green)' : 'var(--red)'};">
+            ${cloudConfig.notifEnabled ? "● Açıqdır" : "○ Bağlıdır"}
+          </span>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <b>Rezervasiya Bildirişləri</b>
+            <small>${cloudConfig.notifEnabled ? "Kimsə rezerv edəndə bildiriş gəlir" : "Bildirişlər söndürülüb"}</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${cloudConfig.notifEnabled ? "checked" : ""} onchange="toggleNotifEnabled(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <b>Ləğv Bildirişləri</b>
+            <small>Müştəri rezervasiyanı ləğv edəndə xəbər ver</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${cloudConfig.notifyOnCancel ? "checked" : ""} onchange="toggleCancelNotif(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label>📱 iPhone Bildiriş Kanalı (ntfy.sh)</label>
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="text" id="ntfyTopicInp" value="${escHtml(cloudConfig.ntfyTopic || "")}" placeholder="Məs: ferid-barber-123" style="flex:1;" />
+            <button class="btn btn-dark btn-sm" onclick="copyNtfyTopic()" title="Kopyala">📋</button>
+            <button class="btn btn-dark btn-sm" onclick="regenerateNtfyTopic()" title="Yeni kod yarat">🎲</button>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveNotifSettings()">💾 Kanalı Saxla</button>
+            <button class="btn btn-green btn-sm" onclick="testPushNotification()">🧪 Test Göndər</button>
+          </div>
+        </div>
+
+        <div class="guide-box">
+          <b>iPhone-da proqram bağlı olanda belə bildiriş almaq üçün (30 san):</b><br/>
+          1. App Store-dan pulsuz <b>ntfy</b> tətbiqini yükləyin.<br/>
+          2. Açın -> <b>+</b> basın -> Yuxarıdakı kanal adını (<b>${escHtml(cloudConfig.ntfyTopic || "...")}</b>) yazıb <b>Subscribe</b> edin.<br/>
+          3. Hazırdır! İstədiyiniz vaxt yuxarıdakı açarla bildirişləri bağlaya bilərsiniz.
+        </div>
+
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer; font-size:12px; font-weight:700; color:var(--muted);">✈️ İstəyə bağlı: Telegram Bot ilə bildiriş</summary>
+          <div style="margin-top:10px;">
+            <div class="field">
+              <label>Bot Token</label>
+              <input type="text" id="tgTokenInp" value="${escHtml(cloudConfig.tgBotToken || "")}" placeholder="123456:ABC-DEF..." />
+            </div>
+            <div class="field">
+              <label>Chat ID</label>
+              <input type="text" id="tgChatInp" value="${escHtml(cloudConfig.tgChatId || "")}" placeholder="Məs: 987654321" />
+            </div>
+            <button class="btn btn-dark btn-sm" style="width:100%;" onclick="saveNotifSettings()">💾 Telegram-ı Yadda Saxla</button>
+          </div>
+        </details>
+
+        ${browserNotifPerm !== "unsupported" ? `
+          <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--muted);">Proqram açıq olanda səs + Safari bildirişi:</span>
+            <button class="btn btn-dark btn-sm" onclick="requestSafariPermission()">
+              ${browserNotifPerm === "granted" ? "✅ İcazə var" : "🔊 İcazə ver"}
+            </button>
+          </div>
+        ` : ""}
+      </div>
+
+      <!-- QR KOD BÖLMƏSİ -->
+      <div class="glass-card" style="border-color:var(--gold-line);">
+        <div class="step-header">
+          <div class="step-title">📱 Müştərilər üçün QR Kod</div>
+        </div>
+        <div class="field">
+          <label>Sayt Linki</label>
+          <div style="display:flex; gap:6px;">
+            <input type="url" id="qrUrlInp" value="${escHtml(cloudConfig.qrUrl || DEFAULT_QR_URL)}" placeholder="https://..." />
+            <button class="btn btn-dark btn-sm" onclick="saveAndRenderQr()">Yenilə</button>
+          </div>
+        </div>
+        <div class="qr-preview-wrap" id="qrContainer">
+          <canvas id="qrPosterCanvas" class="qr-canvas"></canvas>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="shareOrSaveQr()">📥 Şəkli Saxla / Paylaş</button>
+          <button class="btn btn-dark btn-sm" onclick="copyQrLink()">📋 Linki Kopyala</button>
+        </div>
+      </div>
+
       <!-- BƏRBƏRİN QEYDİ -->
       <div class="glass-card">
         <div class="step-header"><div class="step-title">📌 Müştərilər üçün Qeyd (Elan)</div></div>
@@ -1571,6 +1940,8 @@
         </div>
       </div>
     `;
+
+    drawQrPoster(cloudConfig.qrUrl || DEFAULT_QR_URL);
   }
 
   function renderAdminSlotRow(sl, dayBookings, schStart) {
@@ -1613,6 +1984,221 @@
         </div>
       </div>
     `;
+  }
+
+  // ================= ADMIN NASTROYKA VƏ QR FUNKSİYALARI =================
+  function saveBookingDays() {
+    const val = Math.min(14, Math.max(1, Number(document.getElementById("bookingDaysSel").value) || 2));
+    cloudConfig.bookingDays = val;
+    if (db) db.ref(`${ROOT_PATH}/config/bookingDays`).set(val);
+    showToast(`✅ Müştərilər indi ${val} gün görəcək!`);
+    renderAdminView();
+  }
+
+  function toggleNotifEnabled(checked) {
+    cloudConfig.notifEnabled = Boolean(checked);
+    if (db) db.ref(`${ROOT_PATH}/config/notifEnabled`).set(cloudConfig.notifEnabled);
+    showToast(cloudConfig.notifEnabled ? "🔔 Bildirişlər açıldı" : "🔕 Bildirişlər bağlandı");
+    renderAdminView();
+  }
+
+  function toggleCancelNotif(checked) {
+    cloudConfig.notifyOnCancel = Boolean(checked);
+    if (db) db.ref(`${ROOT_PATH}/config/notifyOnCancel`).set(cloudConfig.notifyOnCancel);
+    showToast(cloudConfig.notifyOnCancel ? "Ləğv bildirişi açıldı" : "Ləğv bildirişi bağlandı");
+  }
+
+  function saveNotifSettings() {
+    const topic = (document.getElementById("ntfyTopicInp")?.value || "").trim().replace(/\s+/g, "-");
+    const tgToken = (document.getElementById("tgTokenInp")?.value || "").trim();
+    const tgChat = (document.getElementById("tgChatInp")?.value || "").trim();
+    cloudConfig.ntfyTopic = topic;
+    cloudConfig.tgBotToken = tgToken;
+    cloudConfig.tgChatId = tgChat;
+    if (db) {
+      db.ref(`${ROOT_PATH}/config/ntfyTopic`).set(topic);
+      db.ref(`${ROOT_PATH}/config/tgBotToken`).set(tgToken);
+      db.ref(`${ROOT_PATH}/config/tgChatId`).set(tgChat);
+    }
+    showToast("✅ Bildiriş ayarları saxlanıldı!");
+    renderAdminView();
+  }
+
+  function copyNtfyTopic() {
+    const val = (document.getElementById("ntfyTopicInp")?.value || "").trim();
+    if (!val) return;
+    navigator.clipboard?.writeText(val).then(() => showToast("📋 Kanal adı kopyalandı!")).catch(() => showToast(val));
+  }
+
+  function regenerateNtfyTopic() {
+    const newTopic = "ferid-barber-" + Math.random().toString(36).slice(2, 8);
+    cloudConfig.ntfyTopic = newTopic;
+    if (db) db.ref(`${ROOT_PATH}/config/ntfyTopic`).set(newTopic);
+    showToast("🎲 Yeni gizli kanal yaradıldı!");
+    renderAdminView();
+  }
+
+  function testPushNotification() {
+    const topic = (document.getElementById("ntfyTopicInp")?.value || "").trim();
+    if (!topic && !(document.getElementById("tgTokenInp")?.value || "").trim()) {
+      showToast("⚠️ Əvvəlcə kanal adını yazın");
+      return;
+    }
+    if (topic !== cloudConfig.ntfyTopic) saveNotifSettings();
+    if (cloudConfig.notifEnabled === false) {
+      showToast("⚠️ Bildirişlər bağlıdır — əvvəl yandırın!");
+      return;
+    }
+    playChime();
+    showLocalBrowserNotification("🔔 Test Bildirişi", `${cloudConfig.shopName} bildiriş sistemi işləyir!`);
+    sendRemotePushNotification(
+      "🔔 Test Bildirişi",
+      `Salam! ${cloudConfig.shopName} üçün bildirişlər uğurla aktivdir.`,
+      "white_check_mark,scissors",
+      topic
+    );
+    showToast("📤 Test bildirişi göndərildi!");
+  }
+
+  function requestSafariPermission() {
+    playChime();
+    if (!("Notification" in window)) {
+      showToast("🔊 Səs aktivdir");
+      return;
+    }
+    Notification.requestPermission().then(res => {
+      showToast(res === "granted" ? "✅ Bildiriş icazəsi verildi!" : "⚠️ İcazə verilmədi");
+      renderAdminView();
+    }).catch(() => {});
+  }
+
+  // QR Kod Çəkmə & Paylaşma
+  function drawQrPoster(url) {
+    const canvas = document.getElementById("qrPosterCanvas");
+    const container = document.getElementById("qrContainer");
+    if (!canvas || !container) return;
+
+    if (typeof qrcode === "undefined") {
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}" alt="QR" style="width:240px; height:240px; border-radius:12px; background:#fff; padding:10px;" />`;
+      return;
+    }
+
+    const qr = qrcode(0, "M");
+    qr.addData(url);
+    qr.make();
+    const count = qr.getModuleCount();
+
+    const W = 640, H = 820;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    // Arxa fon
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#1c1511");
+    grad.addColorStop(1, "#0d0a08");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Qızılı çərçivə
+    ctx.strokeStyle = "#d4a853";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(18, 18, W - 36, H - 36);
+
+    // Başlıq
+    ctx.fillStyle = "#f0cf85";
+    ctx.font = "bold 36px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.fillText(cloudConfig.shopName || "Fəridin bərbərxanası", W / 2, 82);
+
+    ctx.fillStyle = "#a69a8c";
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillText("ONLAYN REZERVASİYA", W / 2, 116);
+
+    // Ağ QR qutusu (kamera rahat oxusun deyə)
+    const boxSize = 440;
+    const boxX = (W - boxSize) / 2;
+    const boxY = 152;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(boxX, boxY, boxSize, boxSize, 22) : ctx.rect(boxX, boxY, boxSize, boxSize);
+    ctx.fill();
+
+    const pad = 28;
+    const qrArea = boxSize - pad * 2;
+    const cell = Math.floor(qrArea / count);
+    const offset = Math.floor((boxSize - cell * count) / 2);
+
+    ctx.fillStyle = "#0c0908";
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        if (qr.isDark(r, c)) {
+          ctx.fillRect(boxX + offset + c * cell, boxY + offset + r * cell, cell, cell);
+        }
+      }
+    }
+
+    // Alt yazı
+    ctx.fillStyle = "#f5efe6";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("📷 Kameranı yönəldib vaxt seçin", W / 2, 650);
+
+    ctx.fillStyle = "#d4a853";
+    ctx.font = "600 18px sans-serif";
+    const shortUrl = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    ctx.fillText(shortUrl, W / 2, 692);
+
+    ctx.fillStyle = "#a69a8c";
+    ctx.font = "500 16px sans-serif";
+    ctx.fillText("✂️ Saç  •  🧔 Saqqal  •  💈 Saç + Saqqal", W / 2, 745);
+  }
+
+  function saveAndRenderQr() {
+    const url = (document.getElementById("qrUrlInp")?.value || "").trim() || DEFAULT_QR_URL;
+    cloudConfig.qrUrl = url;
+    if (db) db.ref(`${ROOT_PATH}/config/qrUrl`).set(url);
+    drawQrPoster(url);
+    showToast("✅ QR kod yeniləndi!");
+  }
+
+  function copyQrLink() {
+    const url = (document.getElementById("qrUrlInp")?.value || cloudConfig.qrUrl || DEFAULT_QR_URL).trim();
+    navigator.clipboard?.writeText(url).then(() => showToast("📋 Link kopyalandı!")).catch(() => showToast(url));
+  }
+
+  function closeQrImageModal() {
+    document.getElementById("qrImageModal").classList.remove("open");
+  }
+
+  async function shareOrSaveQr() {
+    const canvas = document.getElementById("qrPosterCanvas");
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "farids-barber-qr.png", { type: "image/png" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: cloudConfig.shopName || "Rezervasiya QR",
+          text: cloudConfig.qrUrl || DEFAULT_QR_URL
+        });
+        return;
+      }
+    } catch (e) {}
+
+    // iPhone Safari fallback: şəkli modalda göstər ki basıb saxlayaraq Photos-a salsın + yükləmə cəhdi
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = "farids-barber-qr.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    document.getElementById("qrSavePreviewImg").src = dataUrl;
+    document.getElementById("qrImageModal").classList.add("open");
   }
 
   function previewScheduleText() {
@@ -1672,6 +2258,7 @@
     document.getElementById("shopTitleDisplay").textContent = nm;
     document.title = `${nm} — Rezervasiya`;
     if (db) db.ref(`${ROOT_PATH}/config/shopName`).set(nm);
+    drawQrPoster(cloudConfig.qrUrl || DEFAULT_QR_URL);
     showToast("✅ Ad yeniləndi!");
   }
   function changeAdminDay(delta) {
